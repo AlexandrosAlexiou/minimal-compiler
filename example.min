@@ -1,0 +1,20 @@
+program lex
+{	
+	declare i;
+	declare j,k;
+	i:=5
+	j:=6
+	if (i=j)
+		print(i)
+	while (i<j)
+		i:=i+1
+		print(i)
+	loop
+		i:=i+1
+		if(i=100)
+			exit
+
+
+
+
+}
