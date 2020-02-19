@@ -29,11 +29,12 @@ in_tk=18
 inout_tk=19
 input_tk=20
 print_tk=21
+when_tk =22
 
 bound_words_array =['program_tk','declare_tk',
         'if_tk','else_tk',
         'while_tk','doublewhile_tk','loop_tk','exit_tk',
-        'forcase_tk','incase_tk','incase_tk','default_tk'
+        'forcase_tk','incase_tk','when_tk','default_tk'
         'not_tk','and_tk','or_tk',
         'function_tk','procedure_tk','call_tk','return_tk','in_tk','inout_tk',
         'input_tk','print_tk']
@@ -53,25 +54,35 @@ greater_than_or_equal_tk =32  # >=
 smaller_than_or_equal_tk = 33 # <=
 assign_tk = 34  # :=
 double_colon_tk = 35  # :
-open_comment_tk = 36  # \*
-close_comment_tk = 37  # *\
+open_comment_tk = 36  # /*
+close_comment_tk = 37  # */
 comma_tk = 38  # ,
 semicolon_tk = 39  # ;
 open_brackets1_tk = 40  # (
 close_brackets1_tk = 41  # )
 open_brackets2_tk = 42  # [
 close_brackets2_tk = 43  # ]
+open_curly_brackets=44 # {
+close_curly_brackets=45 # {
+one_line_comment_tk=46 # //
 eof_tk = 44  # eof_tk
 white_character_tk = 45 
 error_tk = -1  # error
 
+bytes_read=0
+
+#================================================
+lex_return_values=lex_output()
+line = 1
+compile_target=open(sys.argv[1], "r+")
+#================================================
 
 
 
-def main():
-    lex_return_values=lex_output()
-    compile_target=open(sys.argv[1], "r+")
+def lex():
 
-if __name__=="__main__":
-    main()
+    return 
+
+if __name__=="__lex__":
+    lex()
 
