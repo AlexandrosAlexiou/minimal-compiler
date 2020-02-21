@@ -1,5 +1,5 @@
-program lex
-{	
+a123322 lex
+{
 	declare i;
 	declare j,k;
 	i:=5
@@ -13,8 +13,4 @@ program lex
 		i:=i+1
 		if(i=100)
 			exit
-
-
-
-
 }

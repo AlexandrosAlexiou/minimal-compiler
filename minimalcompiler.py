@@ -1,88 +1,294 @@
-import sys
+import sys,os
 import string
+from enum import Enum
+
+##############################################################
+#                                                            #
+#                     Class definitions                      #
+#                                                            #
+##############################################################
+
+class TokenType(Enum):
+    ID_TK = 0
+    NUMBER_TK = 1
+    # Arithmetic Operators
+    PLUS_TK = 2
+    MINUS_TK = 3
+    TIMES_TK = 4
+    SLASH_TK = 5
+    # Punctuation marks
+    COMMA_TK = 8
+    COLON_TK = 9
+    SEMICOLON_TK = 10
+    # Relational operators
+    EQUAL_TK = 11
+    LESS_TK = 12
+    GREATER_TK = 13
+    NOT_EQUAL_TK = 14
+    GREATER_THAN_OR_EQUAL = 15
+    LESS_THAN_OR_EQUAL = 16
+    # Value Assignment
+    ASSIGN_TK = 17
+    # Brackets
+    LEFT_PARENTHESIS_TK = 18
+    RIGHT_PARENTHESIS_TK = 19
+    LEFT_BRACKET_TK = 20
+    RIGHT_BRACKET_TK = 21
+    LEFT_BRACE_TK = 22
+    RIGHT_BRACE_TK= 23
+    # Comments
+    ONE_LINE_TK = 24
+    OPEN_COMMENT_TK = 25
+    CLOSE_COMMENT_TK = 26
+    # Bound Words
+    PROGRAM_TK = 27
+    DECLARE_TK = 28
+    IF_TK = 29
+    ELSE_TK = 30
+    WHILE_TK = 31
+    DOUBLEWHILE_TK = 32
+    LOOP_TK = 33
+    EXIT_TK = 34
+    FORCASE_TK = 35
+    INCASE_TK = 36
+    WHEN_TK = 37
+    DEFAULT_TK = 38
+    NOT_TK = 39
+    AND_TK =40
+    OR_TK = 41
+    FUNCTION_TK = 42
+    PROCEDURE_TK = 43
+    CALL_TK = 44
+    RETURN_TK = 45
+    IN_TK = 46
+    INOUT_TK = 47
+    INPUT_TK = 48
+    PRINT_TK = 49
+    #End Of File
+    EOF_TK =50
+
+# Lexical analyzer return values to the syntax analyzer
+class Token():
+
+    def __init__(self,tk_type,tk_value):
+        self.__tk_type = tk_type
+        self.__tk_value = tk_value
+
+    def get_tk_type(self):
+        return self.__tk_type
+    
+    def set_tk_type(self, tk_type):
+        self.__tk_type=tk_type
+
+    def get_tk_value(self):
+        return self.__tk_value
+
+    def set_tk_value(self, tk_value):
+        self.__tk_value=tk_value
+
+    def __str__(self):
+        return str(self.tk_type) +','+ str(self.tk_value)
+
+##############################################################
+#                                                            #
+#         Global declarations and definitions                #
+#                                                            #
+##############################################################
+
+lineno = -1 #Current line number
+token = Token(None,None)
+infile = ''
 
 
-class lex_output():
-    token_numberid = -2
-    token=""
+tokens = {
+    '+':            TokenType.PLUS_TK,
+    '-':            TokenType.MINUS_TK,
+    '*':            TokenType.TIMES_TK,
+    '/':            TokenType.SLASH_TK,
+    ',':            TokenType.COMMA_TK,
+    ':':            TokenType.COLON_TK,
+    ';':            TokenType.SEMICOLON_TK,
+    '<':            TokenType.LESS_TK,
+    '>':            TokenType.GREATER_TK,
+    '<=':           TokenType.LESS_THAN_OR_EQUAL,
+    '>=':           TokenType.GREATER_THAN_OR_EQUAL,
+    '=':            TokenType.EQUAL_TK,
+    '<>':           TokenType.NOT_EQUAL_TK,
+    ':=':           TokenType.ASSIGN_TK,
+    '(':            TokenType.LEFT_PARENTHESIS_TK,
+    ')':            TokenType.RIGHT_PARENTHESIS_TK,
+    '[':            TokenType.LEFT_BRACKET_TK,
+    ']':            TokenType.RIGHT_BRACKET_TK,
+    '{':            TokenType.LEFT_BRACE_TK,
+    '}':            TokenType.RIGHT_BRACE_TK,
+    '//':           TokenType.ONE_LINE_TK,
+    '/*':           TokenType.OPEN_COMMENT_TK,
+    '*/':           TokenType.CLOSE_COMMENT_TK,
+    'program':      TokenType.PROGRAM_TK,
+    'declare':      TokenType.DECLARE_TK,
+    'if':           TokenType.IF_TK,
+    'else':         TokenType.ELSE_TK,
+    'while':        TokenType.WHILE_TK,
+    'doublewhile':  TokenType.DOUBLEWHILE_TK,
+    'loop':         TokenType.LOOP_TK,
+    'exit':         TokenType.EXIT_TK,
+    'forcase':      TokenType.FORCASE_TK,
+    'incase':       TokenType.INCASE_TK,
+    'when':         TokenType.WHEN_TK,
+    'default':      TokenType.DEFAULT_TK,
+    'not':          TokenType.NOT_TK,
+    'and':          TokenType.AND_TK,
+    'or':           TokenType.OR_TK,
+    'function':     TokenType.FUNCTION_TK,
+    'procedure':    TokenType.PROCEDURE_TK,
+    'call':         TokenType.CALL_TK,
+    'return':       TokenType.RETURN_TK,
+    'in':           TokenType.IN_TK,
+    'inout':        TokenType.INOUT_TK,
+    'input':        TokenType.INPUT_TK,
+    'print':        TokenType.PRINT_TK,
+}
 
-#Bound words (Desmeumenes Lekseis)
-program_tk=0
-declare_tk=1
-if_tk=2
-else_tk=3
-while_tk=4
-doublewhile_tk=5
-loop_tk=6
-exit_tk=7
-forcase_tk=8
-incase_tk=9
-default_tk=10
-not_tk=11
-and_tk=12
-or_tk=13
-function_tk=14
-procedure_tk=15
-call_tk=16
-return_tk=17
-in_tk=18
-inout_tk=19
-input_tk=20
-print_tk=21
-when_tk =22
+# Open files.
+def open_files(input_file):
+    global infile,lineno
+    lineno=1
+    infile = open(input_file,"r+")
 
-bound_words_array =['program_tk','declare_tk',
-        'if_tk','else_tk',
-        'while_tk','doublewhile_tk','loop_tk','exit_tk',
-        'forcase_tk','incase_tk','when_tk','default_tk'
-        'not_tk','and_tk','or_tk',
-        'function_tk','procedure_tk','call_tk','return_tk','in_tk','inout_tk',
-        'input_tk','print_tk']
-
-#Tokens (Lektikes monades)
-id_tk = 22  # variable
-digit_tk = 23  # pshfio
-plus_tk = 24  # +
-minus_tk = 25  # -
-multi_tk = 26  # *
-division_tk = 27  # /
-equal_tk = 28  # =
-smaller_tk = 29  # <
-different_tk = 30  # <>
-greater_than_tk = 31  # >
-greater_than_or_equal_tk =32  # >=
-smaller_than_or_equal_tk = 33 # <=
-assign_tk = 34  # :=
-double_colon_tk = 35  # :
-open_comment_tk = 36  # /*
-close_comment_tk = 37  # */
-comma_tk = 38  # ,
-semicolon_tk = 39  # ;
-open_brackets1_tk = 40  # (
-close_brackets1_tk = 41  # )
-open_brackets2_tk = 42  # [
-close_brackets2_tk = 43  # ]
-open_curly_brackets=44 # {
-close_curly_brackets=45 # {
-one_line_comment_tk=46 # //
-eof_tk = 44  # eof_tk
-white_character_tk = 45 
-error_tk = -1  # error
-
-bytes_read=0
-
-#================================================
-lex_return_values=lex_output()
-line = 1
-compile_target=open(sys.argv[1], "r+")
-#================================================
-
-
-
+# Close files.
+def close_files():
+    global infile
+    infile.close()
+           
+##############################################################
+#                                                            #
+#                   Lexical analyzer                         #
+#                                                            #
+##############################################################
 def lex():
+    # File is allowed to have empty lines tabs and spaces at the start
+    global lineno
+    character = infile.read(1)
+    
+    while (character == ' ' or character == "\n" or character == "\t"):
+        if character is "\n":
+            lineno += 1
+        character = infile.read(1)
+    
+    while True:
+        buffer = character
+        if character.isalpha():
 
-    return 
+            character = infile.read(1)
 
-if __name__=="__lex__":
+            while character.isalpha() or character.isnumeric():
+                buffer+=character
+                character = infile.read(1)
+
+            infile.seek(infile.tell() - 1)
+
+            if buffer in tokens.keys():
+                retval = Token(tokens[buffer],buffer)
+            else:
+                retval = Token(TokenType.ID_TK,buffer)
+            
+            print(retval.get_tk_type())
+            print(retval.get_tk_value())
+            
+            '''elif character.isnumeric():
+
+            while character.isnumeric():
+                lex_return_values.token_numberid = TokenType.NUMBER_TK
+                character = infile.read(1)
+                if character.isnumeric():
+                    hold += character
+                else:
+                    if character.isalpha():
+                        lex_return_values.token_numberid = error_tk
+                        print('===================================================')
+                        print("ERROR: Invalid Syntax : "+ hold+" in line:", line)
+                        print('===================================================')
+                        sys.exit()
+                        
+            infile.seek(infile.tell() - 1)
+            lex_return_values.token = hold
+            if int(hold) > 32767 or int(hold) < -32767:
+                print('====================================================================')
+                print("ERROR: Invalid declaration. Number: "+hold+" is out of limits [-32767,32767] in line:", line)
+                print('====================================================================')
+                sys.exit()
+
+        elif character is '+':
+            lex_return_values.token_numberid=plus_tk
+            lex_return_values.token=hold
+        elif character is '-':
+            lex_return_values.token_numberid=minus_tk
+            lex_return_values.token=hold
+        elif character is '*':
+            lex_return_values.token_numberid=multi_tk
+            lex_return_values.token=hold
+        elif character is '/':
+            lala=3
+        elif character is '(':
+            lex_return_values.token_numberid=open_parenthesis_tk
+            lex_return_values.token=hold
+        elif character is ')':
+            lex_return_values.token_numberid=close_parenthesis_tk
+            lex_return_values.token=hold
+        elif character is '[':
+            lex_return_values.token_numberid=open_brackets_tk
+            lex_return_values.token=hold
+        elif character is ']':
+            lex_return_values.token_numberid=close_brackets_tk
+            lex_return_values.token=hold
+        elif character is '{':
+            lex_return_values.token_numberid=open_curly_brackets
+            lex_return_values.token=hold
+        elif character is '}':
+            lex_return_values.token_numberid=close_curly_brackets
+            lex_return_values.token=hold
+        elif character is '<':
+            lala=3
+        elif character is '>':
+            lala=3
+        elif character is '=':
+            lala=3
+        elif character is ',':
+            lala=3
+        elif character is ';':
+            lala=3
+        elif character is ':':
+            lala=3 
+        else:
+            lex_return_values.token_numberid = error_tk
+            lex_return_values.token = "Invalid character!!: ", line
+            sys.exit()                
+        return lex_return_values
+    return'''
+
+
+##############################################################
+#                                                            #
+#                   main compiler program                    #
+#                                                            #
+##############################################################
+def main(argv):
+    open_files(argv)
     lex()
+    close_files()
+
+if __name__=='__main__':
+
+    # No arguments passed
+    if len(sys.argv)==1:
+        print("ERROR. Please pass a .min file as an argument to compile.")
+        sys.exit(1)
+
+    # File does not exist
+    if os.path.exists(sys.argv[1])==False:
+        print("ERROR. File specified not found.")
+        sys.exit(1)
+
+    # Call main function
+    main(sys.argv[1])
 
