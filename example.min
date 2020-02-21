@@ -1,4 +1,4 @@
-a123322 lex
+program lex
 {
 	declare i;
 	declare j,k;

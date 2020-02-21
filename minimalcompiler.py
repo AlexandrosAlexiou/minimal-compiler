@@ -87,7 +87,7 @@ class Token():
         self.__tk_value=tk_value
 
     def __str__(self):
-        return str(self.tk_type) +','+ str(self.tk_value)
+        return str(self.__tk_type) +','+ str(self.__tk_value)
 
 ##############################################################
 #                                                            #
@@ -171,7 +171,7 @@ def lex():
     character = infile.read(1)
     
     while (character == ' ' or character == "\n" or character == "\t"):
-        if character is "\n":
+        if character == "\n":
             lineno += 1
         character = infile.read(1)
     
@@ -191,80 +191,117 @@ def lex():
                 retval = Token(tokens[buffer],buffer)
             else:
                 retval = Token(TokenType.ID_TK,buffer)
-            
-            print(retval.get_tk_type())
-            print(retval.get_tk_value())
-            
-            '''elif character.isnumeric():
+
+            return retval
+        elif character.isnumeric():
 
             while character.isnumeric():
-                lex_return_values.token_numberid = TokenType.NUMBER_TK
+               
                 character = infile.read(1)
                 if character.isnumeric():
-                    hold += character
+                    buffer+= character
                 else:
                     if character.isalpha():
-                        lex_return_values.token_numberid = error_tk
+                        
                         print('===================================================')
-                        print("ERROR: Invalid Syntax : "+ hold+" in line:", line)
+                        print("ERROR: Invalid Syntax : "+ str(buffer+character)+" in line:", str(lineno))
                         print('===================================================')
                         sys.exit()
                         
             infile.seek(infile.tell() - 1)
-            lex_return_values.token = hold
-            if int(hold) > 32767 or int(hold) < -32767:
+           
+            if int(buffer) > 32767 or int(buffer) < -32767:
                 print('====================================================================')
-                print("ERROR: Invalid declaration. Number: "+hold+" is out of limits [-32767,32767] in line:", line)
+                print("ERROR: Invalid declaration. Number: "+str(buffer)+" is out of limits [-32767,32767] in line:", str(lineno))
                 print('====================================================================')
                 sys.exit()
-
+            return Token(TokenType.NUMBER_TK,buffer)
         elif character is '+':
-            lex_return_values.token_numberid=plus_tk
-            lex_return_values.token=hold
+           return Token(TokenType.PLUS_TK,buffer)
         elif character is '-':
-            lex_return_values.token_numberid=minus_tk
-            lex_return_values.token=hold
+            return Token(TokenType.MINUS_TK,buffer)
         elif character is '*':
-            lex_return_values.token_numberid=multi_tk
-            lex_return_values.token=hold
+            character =infile.read(1)
+            if character == '/':
+                print('===================================================')
+                print("ERROR: Invalid Syntax. Comments closed were never opened : "+ str(buffer+character)+" in line:", lineno)
+                print('===================================================')
+                sys.exit()
+            else :
+                return Token(TokenType.TIMES_TK,buffer)
         elif character is '/':
-            lala=3
+            character =infile.read(1)
+            if (character is '/'):
+                while character is not '\n':
+                   character=infile.read(1)
+                infile.seek(infile.tell()-1)
+                lineno+=1  
+            elif character is '*':
+                opencomments=lineno
+                while (True):
+                    character=infile.read(1)
+                    if not character :
+                        print('====================================================================')
+                        print("ERROR: Invalid syntax. Opened comments in line: "+str(opencomments)+". Expected: '*/' but EOF found. ")
+                        print('====================================================================')
+                        sys.exit()
+                    if character =='\n':
+                        lineno+=1
+                    if character =="*":
+                        character =infile.read(1)
+                        if character =="/":
+                            continue                   
         elif character is '(':
-            lex_return_values.token_numberid=open_parenthesis_tk
-            lex_return_values.token=hold
+           return Token(TokenType.LEFT_PARENTHESIS_TK,buffer)
         elif character is ')':
-            lex_return_values.token_numberid=close_parenthesis_tk
-            lex_return_values.token=hold
+            return Token(TokenType.RIGHT_PARENTHESIS_TK,buffer)
         elif character is '[':
-            lex_return_values.token_numberid=open_brackets_tk
-            lex_return_values.token=hold
+            return Token(TokenType.LEFT_BRACKET_TK,buffer)
         elif character is ']':
-            lex_return_values.token_numberid=close_brackets_tk
-            lex_return_values.token=hold
+            return Token(TokenType.RIGHT_BRACKET_TK,buffer)
         elif character is '{':
-            lex_return_values.token_numberid=open_curly_brackets
-            lex_return_values.token=hold
+            return Token(TokenType.LEFT_BRACE_TK,buffer)
         elif character is '}':
-            lex_return_values.token_numberid=close_curly_brackets
-            lex_return_values.token=hold
+            return Token(TokenType.RIGHT_BRACE_TK,buffer)
         elif character is '<':
-            lala=3
+            character = infile.read(1)
+            if character is '=':
+                buffer+=character
+                return Token(TokenType.LESS_THAN_OR_EQUAL,buffer)
+            elif character is '>':
+                buffer+=character
+                return Token(TokenType.NOT_EQUAL_TK,buffer)
+            else:
+                infile.seek(infile.tell() - 1)
+                return Token(TokenType.LESS_TK,buffer)
         elif character is '>':
-            lala=3
+            character = infile.read(1)
+            if character is '=':
+                buffer+=character
+                return Token(TokenType.GREATER_THAN_OR_EQUAL,buffer)
+            else:
+                infile.seek(infile.tell() - 1)
+                return Token(TokenType.GREATER_TK,buffer)
         elif character is '=':
-            lala=3
+            return Token(TokenType.EQUAL_TK,buffer)
         elif character is ',':
-            lala=3
+            return Token(TokenType.COMMA_TK,buffer)
         elif character is ';':
-            lala=3
+            return Token(TokenType.SEMICOLON_TK,buffer)
         elif character is ':':
-            lala=3 
+            character = infile.read(1)
+            if character is '=':
+                buffer+=character
+                return Token(TokenType.ASSIGN_TK,buffer)
+            else:
+                return Token(TokenType.COLON_TK,buffer)
+                infile.seek(infile.tell() - 1) 
+        elif character is '':
+            return Token(TokenType.EOF_TK,'EOF')
         else:
-            lex_return_values.token_numberid = error_tk
-            lex_return_values.token = "Invalid character!!: ", line
-            sys.exit()                
-        return lex_return_values
-    return'''
+            print("Syntax Error. Invalid character: "+str(buffer)+" in line: " + str(lineno))
+            sys.exit()          
+    return
 
 
 ##############################################################
@@ -274,7 +311,14 @@ def lex():
 ##############################################################
 def main(argv):
     open_files(argv)
-    lex()
+    while True:
+        global token
+        token=lex()
+        print(token.get_tk_type())
+        print(token.get_tk_value())
+        if(token.get_tk_value()=='EOF'):
+            sys.exit()
+
     close_files()
 
 if __name__=='__main__':
@@ -291,4 +335,5 @@ if __name__=='__main__':
 
     # Call main function
     main(sys.argv[1])
+
 
