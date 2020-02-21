@@ -230,27 +230,30 @@ def lex():
             else :
                 return Token(TokenType.TIMES_TK,buffer)
         elif character is '/':
-            character =infile.read(1)
-            if (character is '/'):
-                while character is not '\n':
-                   character=infile.read(1)
-                infile.seek(infile.tell()-1)
-                lineno+=1  
-            elif character is '*':
-                opencomments=lineno
-                while (True):
-                    character=infile.read(1)
-                    if not character :
-                        print('====================================================================')
-                        print("ERROR: Invalid syntax. Opened comments in line: "+str(opencomments)+". Expected: '*/' but EOF found. ")
-                        print('====================================================================')
+            character = infile.read(1)
+            if character is '*':
+                while (1):
+                    character = infile.read(1)
+                    if not character:
+                        print('=============================')
+                        print("ERROR: Comments did not close")
+                        print('=============================')
                         sys.exit()
-                    if character =='\n':
-                        lineno+=1
-                    if character =="*":
-                        character =infile.read(1)
-                        if character =="/":
-                            continue                   
+
+                    if character is '*':
+                        character = infile.read(1)
+                        if character is '/':
+                            return lex()
+                    elif character is '\n':
+                        lineno += 1
+            elif character is '/':
+                while(character is not '\n'):
+                    character=infile.read(1)
+                lineno+=1
+                return lex()                        
+            elif character is not '/':
+                return Token(TokenType.SLASH_TK,buffer)
+                                             
         elif character is '(':
            return Token(TokenType.LEFT_PARENTHESIS_TK,buffer)
         elif character is ')':
@@ -300,7 +303,8 @@ def lex():
             return Token(TokenType.EOF_TK,'EOF')
         else:
             print("Syntax Error. Invalid character: "+str(buffer)+" in line: " + str(lineno))
-            sys.exit()          
+            sys.exit()
+
     return
 
 

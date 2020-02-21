@@ -2,7 +2,16 @@ program lex
 {
 	declare i;
 	declare j,k;
-	i:=5
+	/*
+			aaaaaa
+			
+			ssaassaassssddasaddasasd saassaassssddasaddasasd
+			assaasasassasaasassaassaassssddasaddasasd
+			assaasasassasaasassaassaassssddasaddasasd
+			assaasasassasaasassaassaassssddasaddasasd
+			assaasasassasaasas
+			assaasasassasaasas
+						*/
 	j:=6
 	if (i=j)
 		print(i)
