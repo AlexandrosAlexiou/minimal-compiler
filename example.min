@@ -1,5 +1,6 @@
-program lex
+programlex
 {
+	declare a12
 	declare i;
 	declare j,k;
 	/*
@@ -7,9 +8,9 @@ program lex
 			lalalalalalalalalalalalalalalalalala
 			lalalalalalalalalalalalalalalalalala
 			lalalalalalalalalalalalalalala
-						*/
+				//error here! close comments		
 	j:=6
-	if (i=j)
+	if (i>>j)
 		print(i)
 	while (i<j)
 		i:=i+1

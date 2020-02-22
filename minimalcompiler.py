@@ -9,7 +9,7 @@ from enum import Enum
 ##############################################################
 
 # For Error and warning printing
-class clr:
+class ShellColors:
     GRN    = '\033[92m'
     WRN    = '\033[95m'
     ERR    = '\033[91m'
@@ -106,6 +106,7 @@ class Token():
 ##############################################################
 
 lineno = -1 #Current line number
+charno = -1 #Current Character number from the start
 token = Token(None,None)
 infile = ''
 
@@ -161,8 +162,9 @@ tokens = {
 
 # Open files.
 def open_files(input_file):
-    global infile,lineno
+    global infile,lineno,charno
     lineno=1
+    charno=0
     infile = open(input_file,"r+")
 
 # Close files.
@@ -172,15 +174,15 @@ def close_files():
 
 # Error messages printing beatifully
 def error_line_message(lineno, charno, *args, **kwargs):
-    print('[' + clr.ERR + 'ERROR' + clr.END + ']', clr.BLD + '%s:%d:%d:' %
-        (infile.name, lineno, charno) + clr.END, *args,  **kwargs)
+    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']', ShellColors.BLD + '%s:%d:%d:' %
+        (infile.name, lineno, charno) + ShellColors.END, *args,  **kwargs)
     currchar = infile.tell()
     # character pointer
     infile.seek(0)
     for index, line in enumerate(infile):
         if index == lineno-1:
-            print(" ", line.replace('\t', ' ').replace('\n', ''))
-            print(clr.GRN + " " * (charno + 1) + '^' + clr.END)
+            print(line.replace('\t', ' ').replace('\n', ' '))
+            print(ShellColors.GRN + " " * (charno-1) + '^' + ShellColors.END)
     close_files()
     sys.exit()
 
@@ -190,26 +192,34 @@ def error_line_message(lineno, charno, *args, **kwargs):
 #                                                            #
 ##############################################################
 def lex():
-    # File is allowed to have empty lines tabs and spaces at the start
-    global lineno
-    character = infile.read(1)
     
+    global lineno,charno
+    character = infile.read(1)
+    charno+=1
+
+    # File is allowed to have empty lines tabs and spaces at the start
     while (character == ' ' or character == "\n" or character == "\t"):
         if character == "\n":
             lineno += 1
+            charno=0
         character = infile.read(1)
+        charno+=1
     
     while True:
         buffer = character
         if character.isalpha():
 
             character = infile.read(1)
+            charno+=1
 
             while character.isalpha() or character.isnumeric():
                 buffer+=character
                 character = infile.read(1)
+                charno+=1
+                
 
             infile.seek(infile.tell() - 1)
+            charno-=1
 
             if buffer in tokens.keys():
                 retval = Token(tokens[buffer],buffer)
@@ -222,20 +232,20 @@ def lex():
             while character.isnumeric():
                
                 character = infile.read(1)
+                charno+=1
                 if character.isnumeric():
                     buffer+= character
                 else:
                     if character.isalpha():
-                        error_line_message(lineno,4,'Variable names should begin with alphabetic character')
+                        error_line_message(lineno,charno,'Variable names should begin with alphabetic character.')
                         close_files()
                         sys.exit(0)
                         
             infile.seek(infile.tell() - 1)
+            charno-=1
            
             if int(buffer) > 32767 or int(buffer) < -32767:
-                print('====================================================================')
-                print("ERROR: Invalid declaration. Number: "+str(buffer)+" is out of limits [-32767,32767] in line:", str(lineno))
-                print('====================================================================')
+                error_line_message(lineno,charno,'Integer value out of range [-32767,32767].')
                 close_files()
                 sys.exit(0)
             return Token(TokenType.NUMBER_TK,buffer)
@@ -245,40 +255,42 @@ def lex():
             return Token(TokenType.MINUS_TK,buffer)
         elif character is '*':
             character =infile.read(1)
+            charno+=1
             if character == '/':
-                print('===================================================')
-                print("ERROR: Invalid Syntax. Comments closed were never opened : "+ str(buffer+character)+" in line:", lineno)
-                print('===================================================')
+                error_line_message(lineno,charno,'Expected "/*" to open comments before "*/" .')
                 close_files()
                 sys.exit()
             else :
                 return Token(TokenType.TIMES_TK,buffer)
         elif character is '/':
             character = infile.read(1)
+            comments_charno=charno
+            comments_line=lineno
+            charno+=1
             if character is '*':
                 while (1):
                     character = infile.read(1)
                     if not character:
-                        print('=============================')
-                        print("ERROR: Comments did not close")
-                        print('=============================')
+                        error_line_message(comments_line,comments_charno,'Comments opend. Expected  "*/"  but EOF reached.')
                         close_files()
                         sys.exit()
 
                     if character is '*':
                         character = infile.read(1)
                         if character is '/':
+                            
                             return lex()
                     elif character is '\n':
                         lineno += 1
+                        charno=0
             elif character is '/':
                 while(character is not '\n'):
                     character=infile.read(1)
                 lineno+=1
+                charno=0
                 return lex()                        
             elif character is not '/':
-                return Token(TokenType.SLASH_TK,buffer)
-                                             
+                return Token(TokenType.SLASH_TK,buffer)                                    
         elif character is '(':
            return Token(TokenType.LEFT_PARENTHESIS_TK,buffer)
         elif character is ')':
@@ -322,12 +334,12 @@ def lex():
                 buffer+=character
                 return Token(TokenType.ASSIGN_TK,buffer)
             else:
+                infile.seek(infile.tell() - 1)
                 return Token(TokenType.COLON_TK,buffer)
-                infile.seek(infile.tell() - 1) 
         elif character is '':
             return Token(TokenType.EOF_TK,'EOF')
         else:
-            print("Syntax Error. Invalid character: "+str(buffer)+" in line: " + str(lineno))
+            error_line_message(lineno,charno,'Invalid character.')
             close_files()
             sys.exit()
 
