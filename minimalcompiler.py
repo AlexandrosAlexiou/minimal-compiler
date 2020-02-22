@@ -8,6 +8,16 @@ from enum import Enum
 #                                                            #
 ##############################################################
 
+# For Error and warning printing
+class clr:
+    GRN    = '\033[92m'
+    WRN    = '\033[95m'
+    ERR    = '\033[91m'
+    END    = '\033[0m'
+    BLD    = '\033[1m'
+    UNDRLN = '\033[4m'
+
+# Token ids
 class TokenType(Enum):
     ID_TK = 0
     NUMBER_TK = 1
@@ -87,7 +97,7 @@ class Token():
         self.__tk_value=tk_value
 
     def __str__(self):
-        return str(self.__tk_type) +','+ str(self.__tk_value)
+        return '('+str(self.__tk_type) +','+ str(self.__tk_value) + ')'
 
 ##############################################################
 #                                                            #
@@ -159,7 +169,21 @@ def open_files(input_file):
 def close_files():
     global infile
     infile.close()
-           
+
+# Error messages printing beatifully
+def error_line_message(lineno, charno, *args, **kwargs):
+    print('[' + clr.ERR + 'ERROR' + clr.END + ']', clr.BLD + '%s:%d:%d:' %
+        (infile.name, lineno, charno) + clr.END, *args,  **kwargs)
+    currchar = infile.tell()
+    # character pointer
+    infile.seek(0)
+    for index, line in enumerate(infile):
+        if index == lineno-1:
+            print(" ", line.replace('\t', ' ').replace('\n', ''))
+            print(clr.GRN + " " * (charno + 1) + '^' + clr.END)
+    close_files()
+    sys.exit()
+
 ##############################################################
 #                                                            #
 #                   Lexical analyzer                         #
@@ -202,11 +226,9 @@ def lex():
                     buffer+= character
                 else:
                     if character.isalpha():
-                        
-                        print('===================================================')
-                        print("ERROR: Invalid Syntax : "+ str(buffer+character)+" in line:", str(lineno))
-                        print('===================================================')
-                        sys.exit()
+                        error_line_message(lineno,4,'Variable names should begin with alphabetic character')
+                        close_files()
+                        sys.exit(0)
                         
             infile.seek(infile.tell() - 1)
            
@@ -214,7 +236,8 @@ def lex():
                 print('====================================================================')
                 print("ERROR: Invalid declaration. Number: "+str(buffer)+" is out of limits [-32767,32767] in line:", str(lineno))
                 print('====================================================================')
-                sys.exit()
+                close_files()
+                sys.exit(0)
             return Token(TokenType.NUMBER_TK,buffer)
         elif character is '+':
            return Token(TokenType.PLUS_TK,buffer)
@@ -226,6 +249,7 @@ def lex():
                 print('===================================================')
                 print("ERROR: Invalid Syntax. Comments closed were never opened : "+ str(buffer+character)+" in line:", lineno)
                 print('===================================================')
+                close_files()
                 sys.exit()
             else :
                 return Token(TokenType.TIMES_TK,buffer)
@@ -238,6 +262,7 @@ def lex():
                         print('=============================')
                         print("ERROR: Comments did not close")
                         print('=============================')
+                        close_files()
                         sys.exit()
 
                     if character is '*':
@@ -303,9 +328,8 @@ def lex():
             return Token(TokenType.EOF_TK,'EOF')
         else:
             print("Syntax Error. Invalid character: "+str(buffer)+" in line: " + str(lineno))
+            close_files()
             sys.exit()
-
-    return
 
 
 ##############################################################
@@ -318,8 +342,8 @@ def main(argv):
     while True:
         global token
         token=lex()
-        print(token.get_tk_type())
-        print(token.get_tk_value())
+        print(token)
+        print('\n')
         if(token.get_tk_value()=='EOF'):
             sys.exit()
 

@@ -3,14 +3,10 @@ program lex
 	declare i;
 	declare j,k;
 	/*
-			aaaaaa
-			
-			ssaassaassssddasaddasasd saassaassssddasaddasasd
-			assaasasassasaasassaassaassssddasaddasasd
-			assaasasassasaasassaassaassssddasaddasasd
-			assaasasassasaasassaassaassssddasaddasasd
-			assaasasassasaasas
-			assaasasassasaasas
+			lalalalalalalalalalalalalalalalalala
+			lalalalalalalalalalalalalalalalalala
+			lalalalalalalalalalalalalalalalalala
+			lalalalalalalalalalalalalalala
 						*/
 	j:=6
 	if (i=j)
