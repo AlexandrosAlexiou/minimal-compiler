@@ -106,8 +106,8 @@ class Token():
 ##############################################################
 
 lineno = -1 #Current line number
-charno = -1 #Current Character number from the start
-token = Token(None,None)
+charno = -1 #Current Character number from the start of the line
+token = Token(None,None) 
 infile = ''
 
 
@@ -271,10 +271,9 @@ def lex():
                 while (1):
                     character = infile.read(1)
                     if not character:
-                        error_line_message(comments_line,comments_charno,'Comments opend. Expected  "*/"  but EOF reached.')
+                        error_line_message(comments_line,comments_charno,'Comments opened. Expected  "*/"  but EOF reached.')
                         close_files()
                         sys.exit()
-
                     if character is '*':
                         character = infile.read(1)
                         if character is '/':
@@ -358,22 +357,19 @@ def main(argv):
         print('\n')
         if(token.get_tk_value()=='EOF'):
             sys.exit()
-
     close_files()
 
 if __name__=='__main__':
 
     # No arguments passed
     if len(sys.argv)==1:
-        print("ERROR. Please pass a .min file as an argument to compile.")
+        print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']'+ ": no input files")
         sys.exit(1)
 
     # File does not exist
     if os.path.exists(sys.argv[1])==False:
-        print("ERROR. File specified not found.")
+        print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']'+ ShellColors.ERR +' '+ sys.argv[1] + ' '+ShellColors.END+ " File specified not found.")
         sys.exit(1)
 
     # Call main function
     main(sys.argv[1])
-
-
