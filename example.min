@@ -1,7 +1,7 @@
 program test1
 {
 	declare a2;
-	declare i;
+	declare i,j,k,l,u,t;
 	declare j,k;
 	/*
 			lalalalalalalalalalalalalalalalalala

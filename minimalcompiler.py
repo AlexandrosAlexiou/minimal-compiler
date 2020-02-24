@@ -213,15 +213,14 @@ def lex():
             charno=0
         character = infile.read(1)
         charno+=1
-    
+
     while True:
         buffer = character
+        #print(buffer)
         if character.isalpha():
-
             character = infile.read(1)
             charno+=1
-
-            while character.isalpha() or character.isnumeric():
+            while character.isalpha() or character.isdigit():
                 buffer+=character
                 character = infile.read(1)
                 charno+=1
@@ -233,9 +232,7 @@ def lex():
                 retval = Token(TokenType.ID_TK,buffer)
             return retval
         elif character.isnumeric():
-
             while character.isnumeric():
-               
                 character = infile.read(1)
                 charno+=1
                 if character.isnumeric():
@@ -356,14 +353,24 @@ def block(name):
     global token
     if token.get_tk_type()== TokenType.LEFT_BRACE_TK:
         token = lex()
-        #declarations()
-        #subprograms()
-        #statements()
+        declarations()
+        #subprograms() #TODO
+        #statements()  #TODO
         if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
             error_line_message(0, 0,'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
     else:
         error_line_message(0, 0,'Expected block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
+
+def declarations():
+    global token
+    if token.get_tk_type()== TokenType.DECLARE_TK:
+        token = lex()
+        #varlist() #TODO
+        if token.get_tk_type() != TokenType.SEMICOLON_TK:
+            error_line_message(0,0,'Expected \';\' but found \'%s\' instead' % token.get_tk_value())
+        token = lex
+
 
 ##############################################################
 #                                                            #
@@ -373,10 +380,14 @@ def block(name):
 def main(argv):
     open_files(argv)
     global token
-    token=lex()
-    #print(token)
-    #print('\n')
-    program()
+    while True:
+        token=lex()
+        print(token)
+        print('\n')
+        if token.get_tk_type()==TokenType.EOF_TK:
+            break
+
+    
     close_files()
 
 if __name__=='__main__':
