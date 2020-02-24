@@ -366,10 +366,20 @@ def declarations():
     global token
     if token.get_tk_type()== TokenType.DECLARE_TK:
         token = lex()
-        #varlist() #TODO
+        varlist() 
         if token.get_tk_type() != TokenType.SEMICOLON_TK:
             error_line_message(0,0,'Expected \';\' but found \'%s\' instead' % token.get_tk_value())
-        token = lex
+        token = lex()
+
+def varlist():
+    global token
+    if token.get_tk_type() == TokenType.ID_TK:
+        token = lex()
+        while token.get_tk_type() == TokenType.COMMA_TK:
+            token = lex()
+            if token.get_tk_type() != TokenType.ID_TK:
+               error_line_message(0, 0,'Expected variable declaration but found \'%s\' instead' % token.tkval)
+            token = lex()
 
 
 ##############################################################
@@ -380,12 +390,14 @@ def declarations():
 def main(argv):
     open_files(argv)
     global token
-    while True:
+    token = lex()
+    program()
+    '''while True:
         token=lex()
         print(token)
         print('\n')
         if token.get_tk_type()==TokenType.EOF_TK:
-            break
+            break'''
 
     
     close_files()

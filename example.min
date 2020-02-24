@@ -1,22 +1,4 @@
 program test1
 {
-	declare a2;
-	declare i,j,k,l,u,t;
-	declare j,k;
-	/*
-			lalalalalalalalalalalalalalalalalala
-			lalalalalalalalalalalalalalalalalala
-			lalalalalalalalalalalalalalalalalala
-			lalalalalalalalalalalalalalala
-				*/
-	j:=6
-	if (i>>j)
-		print(i)
-	while (i<j)
-		i:=i+1
-		print(i)
-	loop
-		i:=i+1
-		if(i=100)
-			exit
+	declare a2,a,v,b,ng,g;
 }
