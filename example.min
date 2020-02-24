@@ -1,6 +1,6 @@
-program lex
+program test1
 {
-	declare a2
+	declare a2;
 	declare i;
 	declare j,k;
 	/*
@@ -8,7 +8,7 @@ program lex
 			lalalalalalalalalalalalalalalalalala
 			lalalalalalalalalalalalalalalalalala
 			lalalalalalalalalalalalalalala
-				
+				*/
 	j:=6
 	if (i>>j)
 		print(i)

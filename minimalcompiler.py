@@ -105,9 +105,11 @@ class Token():
 #                                                            #
 ##############################################################
 
+
 lineno = -1 #Current line number
 charno = -1 #Current Character number from the start of the line
-token = Token(None,None) 
+token = Token(None,None)
+mainprog_name =' '
 infile = ''
 
 
@@ -174,9 +176,7 @@ def close_files():
 
 # Error messages printing beatifully
 def error_line_message(lineno, charno, *args, **kwargs):
-    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']', ShellColors.BLD + '%s:%d:%d:' %
-        (infile.name, lineno, charno) + ShellColors.END, *args,  **kwargs)
-    currchar = infile.tell()
+    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']', ShellColors.BLD + '%s:%d:%d:' %(infile.name, lineno, charno) + ShellColors.END, *args,  **kwargs)
     # character pointer
     infile.seek(0)
     for index, line in enumerate(infile):
@@ -184,7 +184,16 @@ def error_line_message(lineno, charno, *args, **kwargs):
             print(line.replace('\t', ' ').replace('\n', ' '))
             print(ShellColors.GRN + " " * (charno-1) + '^' + ShellColors.END)
     close_files()
-    sys.exit()
+    sys.exit(1)
+
+def error_file_not_found(*args, **kwargs):
+    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']'+ ' File:'+ShellColors.GRN +' '+ sys.argv[1] + ' '+ShellColors.END+'not found.')
+    sys.exit(1)
+
+def error(*args, **kwargs):
+    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']', *args, **kwargs)
+    close_files()
+    sys.exit(1)
 
 ##############################################################
 #                                                            #
@@ -216,16 +225,12 @@ def lex():
                 buffer+=character
                 character = infile.read(1)
                 charno+=1
-                
-
             infile.seek(infile.tell() - 1)
             charno-=1
-
             if buffer in tokens.keys():
                 retval = Token(tokens[buffer],buffer)
             else:
                 retval = Token(TokenType.ID_TK,buffer)
-
             return retval
         elif character.isnumeric():
 
@@ -238,16 +243,10 @@ def lex():
                 else:
                     if character.isalpha():
                         error_line_message(lineno,charno,'Variable names should begin with alphabetic character.')
-                        close_files()
-                        sys.exit(0)
-                        
             infile.seek(infile.tell() - 1)
             charno-=1
-           
             if int(buffer) > 32767 or int(buffer) < -32767:
                 error_line_message(lineno,charno,'Integer value out of range [-32767,32767].')
-                close_files()
-                sys.exit(0)
             return Token(TokenType.NUMBER_TK,buffer)
         elif character is '+':
            return Token(TokenType.PLUS_TK,buffer)
@@ -258,8 +257,6 @@ def lex():
             charno+=1
             if character == '/':
                 error_line_message(lineno,charno,'Expected "/*" to open comments before "*/" .')
-                close_files()
-                sys.exit()
             else :
                 return Token(TokenType.TIMES_TK,buffer)
         elif character is '/':
@@ -272,12 +269,9 @@ def lex():
                     character = infile.read(1)
                     if not character:
                         error_line_message(comments_line,comments_charno,'Comments opened. Expected  "*/"  but EOF reached.')
-                        close_files()
-                        sys.exit()
                     if character is '*':
                         character = infile.read(1)
                         if character is '/':
-                            
                             return lex()
                     elif character is '\n':
                         lineno += 1
@@ -339,9 +333,37 @@ def lex():
             return Token(TokenType.EOF_TK,'EOF')
         else:
             error_line_message(lineno,charno,'Invalid character.')
-            close_files()
-            sys.exit()
+##############################################################
+#                                                            #
+#           Syntax analyzer related functions                #
+#                                                            #
+##############################################################
 
+def program():
+    global token, mainprog_name, lineno,charno
+    if token.get_tk_type() == TokenType.PROGRAM_TK:
+        token = lex()
+        if token.get_tk_type() == TokenType.ID_TK:
+            mainprog_name = name = token.get_tk_value()
+            token = lex()
+            block(name)
+        else:
+           error_line_message(lineno, charno,'Expected program name but found \'%s\' instead.' % token.get_tk_value())
+    else:
+        error('Expected \'program\' keyword but found \'%s\' instead.' % token.get_tk_value())
+
+def block(name):
+    global token
+    if token.get_tk_type()== TokenType.LEFT_BRACE_TK:
+        token = lex()
+        #declarations()
+        #subprograms()
+        #statements()
+        if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
+            error_line_message(0, 0,'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
+        token = lex()
+    else:
+        error_line_message(0, 0,'Expected block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
 
 ##############################################################
 #                                                            #
@@ -350,25 +372,23 @@ def lex():
 ##############################################################
 def main(argv):
     open_files(argv)
-    while True:
-        global token
-        token=lex()
-        print(token)
-        print('\n')
-        if(token.get_tk_value()=='EOF'):
-            sys.exit()
+    global token
+    token=lex()
+    #print(token)
+    #print('\n')
+    program()
     close_files()
 
 if __name__=='__main__':
 
     # No arguments passed
     if len(sys.argv)==1:
-        print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']'+ ": no input files")
+        error(':no input files.')
         sys.exit(1)
 
     # File does not exist
     if os.path.exists(sys.argv[1])==False:
-        print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']'+ ShellColors.ERR +' '+ sys.argv[1] + ' '+ShellColors.END+ " File specified not found.")
+        error_file_not_found()
         sys.exit(1)
 
     # Call main function
