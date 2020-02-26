@@ -80,9 +80,11 @@ class TokenType(Enum):
 # Lexical analyzer return values to the syntax analyzer
 class Token():
 
-    def __init__(self,tk_type,tk_value):
-        self.__tk_type = tk_type
-        self.__tk_value = tk_value
+    def __init__(self,tk_type,tk_value,tk_lineno,tk_charno):
+        self.__tk_type = tk_type    # token type
+        self.__tk_value = tk_value  # token string value
+        self.__tk_lineno= tk_lineno # token line number
+        self.__tk_charno= tk_charno # token character number from the start of the line
 
     def get_tk_type(self):
         return self.__tk_type
@@ -95,6 +97,18 @@ class Token():
 
     def set_tk_value(self, tk_value):
         self.__tk_value=tk_value
+    
+    def get_tk_lineno(self):
+        return self.__tk_lineno
+
+    def set_tk_value(self, tk_lineno):
+        self.__tk_lineno=tk_lineno
+    
+    def get_tk_charno(self):
+        return self.__tk_charno
+
+    def set_tk_charno(self, tk_charno):
+        self.__tk_charno=tk_charno
 
     def __str__(self):
         return '('+str(self.__tk_type) +','+ str(self.__tk_value) + ')'
@@ -108,7 +122,7 @@ class Token():
 
 lineno = -1 #Current line number
 charno = -1 #Current Character number from the start of the line
-token = Token(None,None)
+token = Token(None,None,None,None)
 mainprog_name =' '
 infile = ''
 
@@ -205,7 +219,7 @@ def lex():
     global lineno,charno
     character = infile.read(1)
     charno+=1
-
+    
     # File is allowed to have empty lines tabs and spaces at the start
     while (character == ' ' or character == "\n" or character == "\t"):
         if character == "\n":
@@ -227,9 +241,9 @@ def lex():
             infile.seek(infile.tell() - 1)
             charno-=1
             if buffer in tokens.keys():
-                retval = Token(tokens[buffer],buffer)
+                retval = Token(tokens[buffer],buffer,lineno,charno)
             else:
-                retval = Token(TokenType.ID_TK,buffer)
+                retval = Token(TokenType.ID_TK,buffer,lineno,charno)
             return retval
         elif character.isnumeric():
             while character.isnumeric():
@@ -239,23 +253,23 @@ def lex():
                     buffer+= character
                 else:
                     if character.isalpha():
-                        error_line_message(lineno,charno,'Variable names should begin with alphabetic character.')
+                        error_line_message(lineno,charno-1,'Variable names should begin with alphabetic character.')
             infile.seek(infile.tell() - 1)
             charno-=1
             if int(buffer) > 32767 or int(buffer) < -32767:
                 error_line_message(lineno,charno,'Integer value out of range [-32767,32767].')
-            return Token(TokenType.NUMBER_TK,buffer)
+            return Token(TokenType.NUMBER_TK,buffer,lineno,charno)
         elif character is '+':
-           return Token(TokenType.PLUS_TK,buffer)
+           return Token(TokenType.PLUS_TK,buffer,lineno,charno)
         elif character is '-':
-            return Token(TokenType.MINUS_TK,buffer)
+            return Token(TokenType.MINUS_TK,buffer,lineno,charno)
         elif character is '*':
             character =infile.read(1)
             charno+=1
             if character == '/':
                 error_line_message(lineno,charno,'Expected "/*" to open comments before "*/" .')
             else :
-                return Token(TokenType.TIMES_TK,buffer)
+                return Token(TokenType.TIMES_TK,buffer,lineno,charno)
         elif character is '/':
             character = infile.read(1)
             comments_charno=charno
@@ -280,54 +294,54 @@ def lex():
                 charno=0
                 return lex()                        
             elif character is not '/':
-                return Token(TokenType.SLASH_TK,buffer)                                    
+                return Token(TokenType.SLASH_TK,buffer,lineno,charno)                                    
         elif character is '(':
-           return Token(TokenType.LEFT_PARENTHESIS_TK,buffer)
+           return Token(TokenType.LEFT_PARENTHESIS_TK,buffer,lineno,charno)
         elif character is ')':
-            return Token(TokenType.RIGHT_PARENTHESIS_TK,buffer)
+            return Token(TokenType.RIGHT_PARENTHESIS_TK,buffer,lineno,charno)
         elif character is '[':
-            return Token(TokenType.LEFT_BRACKET_TK,buffer)
+            return Token(TokenType.LEFT_BRACKET_TK,buffer,lineno,charno)
         elif character is ']':
-            return Token(TokenType.RIGHT_BRACKET_TK,buffer)
+            return Token(TokenType.RIGHT_BRACKET_TK,buffer,lineno,charno)
         elif character is '{':
-            return Token(TokenType.LEFT_BRACE_TK,buffer)
+            return Token(TokenType.LEFT_BRACE_TK,buffer,lineno,charno)
         elif character is '}':
-            return Token(TokenType.RIGHT_BRACE_TK,buffer)
+            return Token(TokenType.RIGHT_BRACE_TK,buffer,lineno,charno)
         elif character is '<':
             character = infile.read(1)
             if character is '=':
                 buffer+=character
-                return Token(TokenType.LESS_THAN_OR_EQUAL,buffer)
+                return Token(TokenType.LESS_THAN_OR_EQUAL,buffer,lineno,charno)
             elif character is '>':
                 buffer+=character
-                return Token(TokenType.NOT_EQUAL_TK,buffer)
+                return Token(TokenType.NOT_EQUAL_TK,buffer,lineno,charno)
             else:
                 infile.seek(infile.tell() - 1)
-                return Token(TokenType.LESS_TK,buffer)
+                return Token(TokenType.LESS_TK,buffer,lineno,charno)
         elif character is '>':
             character = infile.read(1)
             if character is '=':
                 buffer+=character
-                return Token(TokenType.GREATER_THAN_OR_EQUAL,buffer)
+                return Token(TokenType.GREATER_THAN_OR_EQUAL,buffer,lineno,charno)
             else:
                 infile.seek(infile.tell() - 1)
-                return Token(TokenType.GREATER_TK,buffer)
+                return Token(TokenType.GREATER_TK,buffer,lineno,charno)
         elif character is '=':
-            return Token(TokenType.EQUAL_TK,buffer)
+            return Token(TokenType.EQUAL_TK,buffer,lineno,charno)
         elif character is ',':
-            return Token(TokenType.COMMA_TK,buffer)
+            return Token(TokenType.COMMA_TK,buffer,lineno,charno)
         elif character is ';':
-            return Token(TokenType.SEMICOLON_TK,buffer)
+            return Token(TokenType.SEMICOLON_TK,buffer,lineno,charno)
         elif character is ':':
             character = infile.read(1)
             if character is '=':
                 buffer+=character
-                return Token(TokenType.ASSIGN_TK,buffer)
+                return Token(TokenType.ASSIGN_TK,buffer,lineno,charno)
             else:
                 infile.seek(infile.tell() - 1)
-                return Token(TokenType.COLON_TK,buffer)
+                return Token(TokenType.COLON_TK,buffer,lineno,charno)
         elif character is '':
-            return Token(TokenType.EOF_TK,'EOF')
+            return Token(TokenType.EOF_TK,'EOF',lineno,0)
         else:
             error_line_message(lineno,charno,'Invalid character.')
 ##############################################################
@@ -337,30 +351,28 @@ def lex():
 ##############################################################
 
 def program():
-    global token, mainprog_name, lineno,charno
+    global token, lineno,charno
     if token.get_tk_type() == TokenType.PROGRAM_TK:
         token = lex()
         if token.get_tk_type() == TokenType.ID_TK:
-            mainprog_name = name = token.get_tk_value()
             token = lex()
-            block(name)
+            if token.get_tk_type()== TokenType.LEFT_BRACE_TK:
+                token = lex()
+                block()
+                if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
+                    error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
+            else:
+                error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
         else:
-           error_line_message(lineno, charno,'Expected program name but found \'%s\' instead.' % token.get_tk_value())
+           error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected program name but found \'%s\' instead.' % token.get_tk_value())
     else:
         error('Expected \'program\' keyword but found \'%s\' instead.' % token.get_tk_value())
 
-def block(name):
-    global token
-    if token.get_tk_type()== TokenType.LEFT_BRACE_TK:
-        token = lex()
-        declarations()
-        #subprograms() #TODO
-        #statements()  #TODO
-        if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
-            error_line_message(0, 0,'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
-        token = lex()
-    else:
-        error_line_message(0, 0,'Expected block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
+def block():
+    declarations()
+    subprograms() 
+    #statements()  #TODO
+       
 
 def declarations():
     global token
@@ -368,7 +380,7 @@ def declarations():
         token = lex()
         varlist() 
         if token.get_tk_type() != TokenType.SEMICOLON_TK:
-            error_line_message(0,0,'Expected \';\' but found \'%s\' instead' % token.get_tk_value())
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \';\' but found \'%s\' instead' % token.get_tk_value())
         token = lex()
 
 def varlist():
@@ -378,9 +390,59 @@ def varlist():
         while token.get_tk_type() == TokenType.COMMA_TK:
             token = lex()
             if token.get_tk_type() != TokenType.ID_TK:
-               error_line_message(0, 0,'Expected variable declaration but found \'%s\' instead' % token.tkval)
+               error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected variable declaration but found \'%s\' instead' % token.get_tk_value())
             token = lex()
 
+def subprograms():
+    global token
+    while token.get_tk_type()==TokenType.FUNCTION_TK or token.get_tk_type()==TokenType.PROCEDURE_TK:
+        token = lex()
+        if token.get_tk_type()==TokenType.ID_TK:
+            token = lex()
+            funcbody()
+        else:
+             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram name but found \'%s\' instead.' % token.get_tk_value())
+
+def funcbody():
+    global token
+    formalpars()
+    if token.get_tk_type()==TokenType.LEFT_BRACE_TK:
+        #print(token)
+        token = lex()
+        block()
+        #print(token)
+        if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
+             error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())    
+    else:
+        error('Expected subprogram block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
+
+def formalpars():
+    global token
+    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+        token=lex()
+        formalparlist()
+        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
+        token=lex()
+    else:
+        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead.' % token.get_tk_value()) 
+
+def formalparlist():
+    global token
+    formalparitem()
+    while token.get_tk_type() == TokenType.COMMA_TK:
+        token = lex()
+        if token.get_tk_type() != TokenType.IN_TK and token.get_tk_type() != TokenType.INOUT_TK:
+           error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter declaration but found \'%s\' instead'% token.get_tk_value())
+        formalparitem()
+
+def formalparitem():
+    global token
+    if token.get_tk_type() == TokenType.IN_TK or token.get_tk_type() == TokenType.INOUT_TK:
+        token = lex()
+        if token.get_tk_type() != TokenType.ID_TK:
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter name but found \'%s\' instead'% token.get_tk_value()) 
+        token = lex()
 
 ##############################################################
 #                                                            #
@@ -398,8 +460,6 @@ def main(argv):
         print('\n')
         if token.get_tk_type()==TokenType.EOF_TK:
             break'''
-
-    
     close_files()
 
 if __name__=='__main__':

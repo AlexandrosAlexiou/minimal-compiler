@@ -1,4 +1,9 @@
 program test1
 {
-	declare a2,a,v,b,ng,g;
+	declare k ;
+
+	function notafunction( in a,inout b) 
+	{
+
+	}
 }
