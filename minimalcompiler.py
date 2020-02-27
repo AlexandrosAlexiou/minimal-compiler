@@ -371,7 +371,7 @@ def program():
 def block():
     declarations()
     subprograms() 
-    #statements()  #TODO
+    statements()  #TODO
 
 def declarations():
     global token
@@ -450,9 +450,9 @@ def statements():
     statement()
     token = lex()
     if token.get_tk_type() == TokenType.LEFT_BRACE_TK:
-        while token.tktype == TokenType.SEMICOLON:
+        while token.tktype == TokenType.SEMICOLON_TK:
             token = lex()
-            statement();
+            statement()
         if token.get_tk_type()!= TokenType.RIGHT_BRACE_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
 
@@ -495,6 +495,63 @@ def statement():
         token = lex()
         #print_stat()
 
+def assignment_stat():
+    global token
+    if token.get_tk_type()==TokenType.ASSIGN_TK:
+        token=lex()
+        expression()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':=\' but found \'%s\' instead' % token.get_tk_value())
+     
+def expression():
+    global token
+    optional_sign()
+    term()
+    while token.get_tk_type()==TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
+        add_oper()
+        term()
+        
+def optional_sign():
+    global token
+    if token.get_tk_type()== TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
+        add_oper()
+    
+def term():
+    factor()
+    while token.get_tk_type()==TokenType.SLASH_TK or token.get_tk_type()==TokenType.TIMES_TK:
+        mul_oper()
+        factor()
+        
+def factor():
+    global token
+    if token.get_tk_type()==TokenType.NUMBER_TK:
+        #TODO
+        return
+    elif token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
+        token=lex()
+        expression()
+        if token.get_tk_type()!=TokenType.RIGHT_PARENTHESIS_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
+    elif token.get_tk_type()==TokenType.ID_TK:
+        token=lex()
+        idtail()
+    else: 
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead' % token.get_tk_value())
+
+def idtail():
+   global token
+   if token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
+       #actualpars() TODO
+       return
+
+def add_oper():
+    global token
+    if token.get_tk_type()!= TokenType.PLUS_TK and token.get_tk_type()!= TokenType.MINUS_TK :
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'+\' or \'-\' but found \'%s\' instead' % token.get_tk_value())
+    token=lex()
+
+def mul_oper(): #TODO
+    return
 ##############################################################
 #                                                            #
 #                   main compiler program                    #
