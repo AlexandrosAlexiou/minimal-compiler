@@ -101,7 +101,7 @@ class Token():
     def get_tk_lineno(self):
         return self.__tk_lineno
 
-    def set_tk_value(self, tk_lineno):
+    def set_tk_lineno(self, tk_lineno):
         self.__tk_lineno=tk_lineno
     
     def get_tk_charno(self):
@@ -372,7 +372,6 @@ def block():
     declarations()
     subprograms() 
     #statements()  #TODO
-       
 
 def declarations():
     global token
@@ -410,9 +409,11 @@ def funcbody():
         #print(token)
         token = lex()
         block()
-        #print(token)
+        print(token)
         if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
              error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())    
+        token = lex() #maybe
+        print(token)
     else:
         error('Expected subprogram block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
 
@@ -443,6 +444,56 @@ def formalparitem():
         if token.get_tk_type() != TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter name but found \'%s\' instead'% token.get_tk_value()) 
         token = lex()
+
+def statements():
+    global token
+    statement()
+    token = lex()
+    if token.get_tk_type() == TokenType.LEFT_BRACE_TK:
+        while token.tktype == TokenType.SEMICOLON:
+            token = lex()
+            statement();
+        if token.get_tk_type()!= TokenType.RIGHT_BRACE_TK:
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
+
+def statement():
+    global token
+    if token.get_tk_type() == TokenType.ID_TK:
+        token = lex()
+        #assignment_stat()
+    elif token.get_tk_type() == TokenType.IF_TK:
+        token = lex()
+        #if_stat()
+    elif token.get_tk_type() == TokenType.WHILE_TK:
+        token = lex()
+        #while_stat()
+    elif token.get_tk_type() == TokenType.DOUBLEWHILE_TK:
+        token = lex()
+        #doublewhile_stat()
+    elif token.get_tk_type() == TokenType.LOOP_TK:
+        token = lex()
+        #loop_stat()
+    elif token.get_tk_type() == TokenType.EXIT_TK:
+        token = lex()
+        #exit_stat()
+    elif token.get_tk_type() == TokenType.FORCASE_TK:
+        token = lex()
+        #forcase_stat()
+    elif token.get_tk_type() == TokenType.INCASE_TK:
+        token = lex()
+        #incase_stat()
+    elif token.get_tk_type() == TokenType.CALL_TK:
+        token = lex()
+        #call_stat()
+    elif token.get_tk_type() == TokenType.RETURN_TK:
+        token = lex()
+        #return_stat()
+    elif token.get_tk_type() == TokenType.INPUT_TK:
+        token = lex()
+        #input_stat()
+    elif token.get_tk_type() == TokenType.PRINT_TK:
+        token = lex()
+        #print_stat()
 
 ##############################################################
 #                                                            #
