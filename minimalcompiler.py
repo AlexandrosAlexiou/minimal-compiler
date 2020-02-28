@@ -465,19 +465,19 @@ def statement():
         assignment_stat()
     elif token.get_tk_type() == TokenType.IF_TK:
         token = lex()
-        #if_stat()
+        if_stat()
     elif token.get_tk_type() == TokenType.WHILE_TK:
         token = lex()
-        #while_stat()
+        while_stat()
     elif token.get_tk_type() == TokenType.DOUBLEWHILE_TK:
         token = lex()
-        #doublewhile_stat()
+        doublewhile_stat()
     elif token.get_tk_type() == TokenType.LOOP_TK:
         token = lex()
-        #loop_stat()
+        loop_stat()
     elif token.get_tk_type() == TokenType.EXIT_TK:
         token = lex()
-        #exit_stat()
+        #exit_stat() ???
     elif token.get_tk_type() == TokenType.FORCASE_TK:
         token = lex()
         #forcase_stat()
@@ -525,7 +525,38 @@ def elsepart():
     if token.get_tk_type() == TokenType.ELSE_TK:
         token = lex()
         statements()
-     
+
+def while_stat():
+    global token
+    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+        token = lex()
+        #condition() TODO
+        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
+        token = lex()
+        statements()
+    else:
+         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'while\' but found \'%s\' instead'% token.get_tk_value())
+
+def doublewhile_stat():
+    global token
+    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+        token =lex()
+        #condition() TODO
+        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
+        token = lex()
+        statements()
+        if token.get_tk_type() != TokenType.ELSE_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'else\' inside doublewhile but found \'%s\' instead' % token.get_tk_type())
+        token = lex()
+        statements()
+    else:
+         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'doublewhile\' but found \'%s\' instead'% token.get_tk_value())
+
+def loop_stat():
+    statements()
+
 def expression():
     global token
     optional_sign()
