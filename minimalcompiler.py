@@ -74,8 +74,9 @@ class TokenType(Enum):
     INOUT_TK = 47
     INPUT_TK = 48
     PRINT_TK = 49
+    THEN_TK = 50
     #End Of File
-    EOF_TK =50
+    EOF_TK =51
 
 # Lexical analyzer return values to the syntax analyzer
 class Token():
@@ -174,6 +175,7 @@ tokens = {
     'inout':        TokenType.INOUT_TK,
     'input':        TokenType.INPUT_TK,
     'print':        TokenType.PRINT_TK,
+    'then':         TokenType.THEN_TK
 }
 
 # Open files.
@@ -460,7 +462,7 @@ def statement():
     global token
     if token.get_tk_type() == TokenType.ID_TK:
         token = lex()
-        #assignment_stat()
+        assignment_stat()
     elif token.get_tk_type() == TokenType.IF_TK:
         token = lex()
         #if_stat()
@@ -502,6 +504,27 @@ def assignment_stat():
         expression()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':=\' but found \'%s\' instead' % token.get_tk_value())
+
+def if_stat():
+    global token
+    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+        token = lex()
+        #condition() TODO
+        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+           error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' after if condition but found \'%s\' instead' % token.get_tk_value())
+        token = lex()
+        if token.get_tk_type() != TokenType.THEN_TK:
+            token = lex()
+            statements()
+            elsepart()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after if token but found \'%s\' instead' % token.get_tk_value())        
+
+def elsepart():
+    global token
+    if token.get_tk_type() == TokenType.ELSE_TK:
+        token = lex()
+        statements()
      
 def expression():
     global token
@@ -541,8 +564,7 @@ def factor():
 def idtail():
    global token
    if token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
-       #actualpars() TODO
-       return
+       actualpars() 
 
 def add_oper():
     global token
@@ -550,8 +572,44 @@ def add_oper():
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'+\' or \'-\' but found \'%s\' instead' % token.get_tk_value())
     token=lex()
 
-def mul_oper(): #TODO
-    return
+def mul_oper():
+    global token
+    if token.get_tk_type() != TokenType.TIMES_TK and token.get_tk_type() != TokenType.SLASH_TK:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'*\' or \'/\' but found \'%s\' instead' % token.get_tk_value())
+    token = lex()
+
+def actualpars():
+    global token
+    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+        token = lex()
+        actualparlist()
+        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
+        token = lex()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after procedure or function call  but found \'%s\' instead'% token.get_tk_value())
+
+def actualparlist():
+    global token
+    if token.get_tk_type() == TokenType.IN_TK or token.get_tk_type() == TokenType.INOUT_TK:
+        actualparitem()
+        while token.get_tk_type() == TokenType.COMMA_TK:
+            token = lex()
+            actualparitem()
+
+def actualparitem():
+    global token
+    if token.get_tk_type() == TokenType.IN_TK:
+        token = lex()
+        expression()
+    elif token.get_tk_type() == TokenType.INOUT_TK:
+        token = lex()
+        if token.get_tk_type() != TokenType.ID_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead' % token.get_tk_value())
+        token = lex()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected parameter type in or inout but found \'%s\' instead' % token.get_tk_value())
+
 ##############################################################
 #                                                            #
 #                   main compiler program                    #
