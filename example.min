@@ -4,6 +4,6 @@ program test1
 
 	function notafunction( in a, inout b ) 
 	{
-		k :=  3
+
 	}
 }

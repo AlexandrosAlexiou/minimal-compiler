@@ -35,8 +35,8 @@ class TokenType(Enum):
     LESS_TK = 12
     GREATER_TK = 13
     NOT_EQUAL_TK = 14
-    GREATER_THAN_OR_EQUAL = 15
-    LESS_THAN_OR_EQUAL = 16
+    GREATER_THAN_OR_EQUAL_TK = 15
+    LESS_THAN_OR_EQUAL_TK = 16
     # Value Assignment
     ASSIGN_TK = 17
     # Brackets
@@ -138,8 +138,8 @@ tokens = {
     ';':            TokenType.SEMICOLON_TK,
     '<':            TokenType.LESS_TK,
     '>':            TokenType.GREATER_TK,
-    '<=':           TokenType.LESS_THAN_OR_EQUAL,
-    '>=':           TokenType.GREATER_THAN_OR_EQUAL,
+    '<=':           TokenType.LESS_THAN_OR_EQUAL_TK,
+    '>=':           TokenType.GREATER_THAN_OR_EQUAL_TK,
     '=':            TokenType.EQUAL_TK,
     '<>':           TokenType.NOT_EQUAL_TK,
     ':=':           TokenType.ASSIGN_TK,
@@ -259,7 +259,7 @@ def lex():
             infile.seek(infile.tell() - 1)
             charno-=1
             if int(buffer) > 32767 or int(buffer) < -32767:
-                error_line_message(lineno,charno,'Integer value out of range [-32767,32767].')
+                error_line_message(lineno,charno,'Integer value should be between [-32767,32767].')
             return Token(TokenType.NUMBER_TK,buffer,lineno,charno)
         elif character is '+':
            return Token(TokenType.PLUS_TK,buffer,lineno,charno)
@@ -313,7 +313,7 @@ def lex():
             character = infile.read(1)
             if character is '=':
                 buffer+=character
-                return Token(TokenType.LESS_THAN_OR_EQUAL,buffer,lineno,charno)
+                return Token(TokenType.LESS_THAN_OR_EQUAL_TK,buffer,lineno,charno)
             elif character is '>':
                 buffer+=character
                 return Token(TokenType.NOT_EQUAL_TK,buffer,lineno,charno)
@@ -324,7 +324,7 @@ def lex():
             character = infile.read(1)
             if character is '=':
                 buffer+=character
-                return Token(TokenType.GREATER_THAN_OR_EQUAL,buffer,lineno,charno)
+                return Token(TokenType.GREATER_THAN_OR_EQUAL_TK,buffer,lineno,charno)
             else:
                 infile.seek(infile.tell() - 1)
                 return Token(TokenType.GREATER_TK,buffer,lineno,charno)
@@ -373,7 +373,7 @@ def program():
 def block():
     declarations()
     subprograms() 
-    statements()  #TODO
+    #statements() 
 
 def declarations():
     global token
@@ -408,7 +408,7 @@ def funcbody():
     global token
     formalpars()
     if token.get_tk_type()==TokenType.LEFT_BRACE_TK:
-        #print(token)
+        print(token)
         token = lex()
         block()
         print(token)
@@ -423,7 +423,7 @@ def formalpars():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
-        formalparlist()
+        #formalparlist()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token=lex()
@@ -480,22 +480,23 @@ def statement():
         #exit_stat() ???
     elif token.get_tk_type() == TokenType.FORCASE_TK:
         token = lex()
-        #forcase_stat()
+        forcase_stat()
     elif token.get_tk_type() == TokenType.INCASE_TK:
         token = lex()
-        #incase_stat()
-    elif token.get_tk_type() == TokenType.CALL_TK:
-        token = lex()
-        #call_stat()
+        incase_stat()
     elif token.get_tk_type() == TokenType.RETURN_TK:
         token = lex()
-        #return_stat()
-    elif token.get_tk_type() == TokenType.INPUT_TK:
+        return_stat()
+    elif token.get_tk_type() == TokenType.CALL_TK:
         token = lex()
-        #input_stat()
+        call_stat()
     elif token.get_tk_type() == TokenType.PRINT_TK:
         token = lex()
-        #print_stat()
+        print_stat()
+    elif token.get_tk_type() == TokenType.INPUT_TK:
+        token = lex()
+        input_stat()
+    
 
 def assignment_stat():
     global token
@@ -509,7 +510,7 @@ def if_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        #condition() TODO
+        #condition() 
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' after if condition but found \'%s\' instead' % token.get_tk_value())
         token = lex()
@@ -530,7 +531,7 @@ def while_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        #condition() TODO
+        #condition()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
         token = lex()
@@ -552,10 +553,140 @@ def doublewhile_stat():
         token = lex()
         statements()
     else:
-         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'doublewhile\' but found \'%s\' instead'% token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'doublewhile\' but found \'%s\' instead'% token.get_tk_value())
 
 def loop_stat():
     statements()
+
+def forcase_stat():
+    global token
+    while token.get_tk_type()== TokenType.WHEN_TK:
+        token = lex()
+        if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
+            token = lex()
+            #contidion()
+            if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
+                token = lex()
+                if token.get_tk_type()== TokenType.COLON_TK:
+                    token = lex()
+                    statements()
+                else:
+                    error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead'% token.get_tk_value())
+            else:
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+        else:
+             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+        token = lex()
+
+    if token.get_tk_type()== TokenType.DEFAULT_TK:
+        token = lex()
+        statements()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'default:\' declaration but found \'%s\' instead'% token.get_tk_value())
+
+def incase_stat():
+    global token
+    while token.get_tk_type()== TokenType.WHEN_TK:
+        token = lex()
+        if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
+            token = lex()
+            #contidion()
+            if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
+                token = lex()
+                if token.get_tk_type()== TokenType.COLON_TK:
+                    token = lex()
+                    statements()
+                else:
+                    error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead'% token.get_tk_value())
+            else:
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+        else:
+             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+        token = lex()
+
+def return_stat():
+    global token
+    token = lex()
+    expression()
+
+def call_stat():
+    global token
+    if token.get_tk_type() == TokenType.ID_TK:
+        token = lex()
+        actualpars()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected function or procedure id but found \'%s\' instead'% token.get_tk_value())
+
+def print_stat():
+    global token
+    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+        token = lex()
+        expression()
+        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+        token = lex()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+
+def input_stat():
+    global token
+    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+        token = lex()
+        if token.get_tk_type() != TokenType.ID_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead'% token.get_tk_value())
+        token = lex()
+        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+        token = lex()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+
+def condition():
+    global token
+    boolterm()
+    while token.get_tk_type() == TokenType.OR_TK:
+        token = lex()
+        boolterm()
+
+
+def boolterm():
+    global token
+    while token.get_tk_type() == TokenType.AND_TK:
+        token = lex()
+        boolfactor()
+
+def boolfactor():
+    global token
+    if token.get_tk_type() == TokenType.NOT_TK:
+        token == lex()
+        if token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
+            token = lex()
+            condition()
+            if token.get_tk_type() != TokenType.RIGHT_BRACKET_TK:
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
+            token = lex()
+        else:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'[\' after \'not\' but found \'%s\' instead'% token.get_tk_value())
+    elif token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
+        token == lex()
+        condition()
+        if token.get_tk_type() != TokenType.RIGHT_BRACKET_TK:
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
+    else:
+        expression()
+        relational_oper()
+        expression()
+
+def relational_oper():
+    global token
+    if token.get_tk_type() != TokenType.EQUAL_TK and \
+        token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
+        token.get_tk_type() != TokenType.GREATER_THAN_OR_EQUAL_TK and \
+        token.get_tk_type() != TokenType.GREATER_TK and \
+        token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
+        token.get_tk_type() != TokenType.NOT_EQUAL_TK:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected relational operator but found \'%s\' instead'% token.get_tk_value())
+    token = lex()
 
 def expression():
     global token
@@ -578,9 +709,16 @@ def term():
         
 def factor():
     global token
-    if token.get_tk_type()==TokenType.NUMBER_TK:
-        #TODO
-        return
+    sign = '+' #default
+    if token.get_tk_type() == TokenType.NUMBER_TK or token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
+        if token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
+            sign = token.get_tk_value()
+            token = lex()
+        if token.get_tk_type() == TokenType.NUMBER_TK:
+            const = int(''.join((sign, token.get_tk_value())))
+        else:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected constant but found \'%s\' instead' % token.get_tk_value())
+        token = lex()
     elif token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
         expression()
