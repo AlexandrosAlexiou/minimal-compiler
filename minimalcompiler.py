@@ -484,6 +484,8 @@ def statement():
         #exit_stat() ???
     elif token.get_tk_type() == TokenType.FORCASE_TK:
         token = lex()
+        print("MPAINW FOR CASE")
+        print(token)
         forcase_stat()
     elif token.get_tk_type() == TokenType.INCASE_TK:
         token = lex()
@@ -552,7 +554,7 @@ def doublewhile_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token =lex()
-        #condition() TODO
+        condition()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
         token = lex()
@@ -573,7 +575,7 @@ def forcase_stat():
         token = lex()
         if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
             token = lex()
-            #contidion()
+            condition()
             if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
                 token = lex()
                 if token.get_tk_type()== TokenType.COLON_TK:
@@ -585,11 +587,14 @@ def forcase_stat():
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
         else:
              error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
-        token = lex()
-
     if token.get_tk_type()== TokenType.DEFAULT_TK:
         token = lex()
-        statements()
+        if token.get_tk_type()== TokenType.COLON_TK:
+            token = lex()
+            statements()
+        else:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' after \'default\' but found \'%s\' instead'% token.get_tk_value()) 
+        
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'default:\' declaration but found \'%s\' instead'% token.get_tk_value())
 
@@ -690,6 +695,7 @@ def relational_oper():
     global token
     if token.get_tk_type() != TokenType.EQUAL_TK and \
         token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
+        token.get_tk_type() != TokenType.LESS_TK and \
         token.get_tk_type() != TokenType.GREATER_THAN_OR_EQUAL_TK and \
         token.get_tk_type() != TokenType.GREATER_TK and \
         token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \

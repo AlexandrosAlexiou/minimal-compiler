@@ -23,6 +23,19 @@ program test1
 		if( 100 > 300) then 
 			a:= 3;
 
-		while( 5>3 ) a := a-3
+		while( 5>3 ) a := a-3;
+
+		while( 1000>30 ) a := a-100;
+
+		doublewhile( 100<3) a := a-10
+			else a := a-1 ;
+		
+		loop {
+			a:= a +5000; 
+			a:= a +7000;
+			if( 100 > 300) then 
+				exit
+			}
+
 	}
 }

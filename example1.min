@@ -1,21 +1,16 @@
-	
-	
-	
-	
-	
-program lex
+program test2
 {
-	declare i;
-	declare j,k;
-	i:=5
-	j:=6
-	if (i=j)
-		print(i)
-	while (i<j)
-		i:=i+1
-		print(i)
-	loop
-		i:=i+1
-		if(i=100)
-			exit
+	declare k;
+
+	forcase
+		when ( 1 > 2) : a := a + 3
+		default: 
+		{
+			a := a + 4;
+			a := a + 5;
+			forcase
+				when ( 6 > 7) : a := a + 8
+				default: 
+					a :=a + 9
+		}
 }
