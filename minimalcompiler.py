@@ -517,14 +517,16 @@ def if_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        #condition() 
+        condition() 
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' after if condition but found \'%s\' instead' % token.get_tk_value())
         token = lex()
-        if token.get_tk_type() != TokenType.THEN_TK:
+        if token.get_tk_type() == TokenType.THEN_TK:
             token = lex()
             statements()
             elsepart()
+        else:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead' % token.get_tk_value())
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after if token but found \'%s\' instead' % token.get_tk_value())        
 
@@ -657,6 +659,7 @@ def condition():
 
 def boolterm():
     global token
+    boolfactor()
     while token.get_tk_type() == TokenType.AND_TK:
         token = lex()
         boolfactor()
