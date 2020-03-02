@@ -2,8 +2,9 @@ program test1
 {
 	declare k ;
 
-	function notafunction( in a, inout b ) 
+	function alex()
 	{
-
+		declare a ; 
+		a := 3 
 	}
 }

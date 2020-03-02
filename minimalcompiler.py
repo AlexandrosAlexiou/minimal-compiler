@@ -373,7 +373,7 @@ def program():
 def block():
     declarations()
     subprograms() 
-    #statements() 
+    statements() 
 
 def declarations():
     global token
@@ -408,14 +408,10 @@ def funcbody():
     global token
     formalpars()
     if token.get_tk_type()==TokenType.LEFT_BRACE_TK:
-        print(token)
         token = lex()
         block()
-        print(token)
         if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
-             error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())    
-        token = lex() #maybe
-        print(token)
+            error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())  
     else:
         error('Expected subprogram block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
 
@@ -423,7 +419,7 @@ def formalpars():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
-        #formalparlist()
+        formalparlist()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token=lex()
@@ -450,9 +446,11 @@ def formalparitem():
 def statements():
     global token
     statement()
-    token = lex()
+    print("BGHKA APO STATEMENT")
+    print(token)
+    #token = lex()
     if token.get_tk_type() == TokenType.LEFT_BRACE_TK:
-        while token.tktype == TokenType.SEMICOLON_TK:
+        while token.get_tk_type() == TokenType.SEMICOLON_TK:
             token = lex()
             statement()
         if token.get_tk_type()!= TokenType.RIGHT_BRACE_TK:
@@ -497,11 +495,14 @@ def statement():
         token = lex()
         input_stat()
     
-
 def assignment_stat():
+    print("MPHKA ASSIGNMENT")
     global token
+    print(token)
     if token.get_tk_type()==TokenType.ASSIGN_TK:
         token=lex()
+        print("MPHKA EXPRESSION")
+        print(token)
         expression()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':=\' but found \'%s\' instead' % token.get_tk_value())
@@ -648,7 +649,6 @@ def condition():
         token = lex()
         boolterm()
 
-
 def boolterm():
     global token
     while token.get_tk_type() == TokenType.AND_TK:
@@ -697,33 +697,36 @@ def expression():
         term()
         
 def optional_sign():
+    print("MPHKA OPTIONAL SIGN")
     global token
+    print(token)
     if token.get_tk_type()== TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
         add_oper()
     
 def term():
+    global token 
+    print("MPHKA TERM")
+    print(token)
     factor()
     while token.get_tk_type()==TokenType.SLASH_TK or token.get_tk_type()==TokenType.TIMES_TK:
         mul_oper()
         factor()
         
 def factor():
+    print("MPHKA FACTOR")
     global token
-    sign = '+' #default
+    print(token)
     if token.get_tk_type() == TokenType.NUMBER_TK or token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
-        if token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
-            sign = token.get_tk_value()
-            token = lex()
-        if token.get_tk_type() == TokenType.NUMBER_TK:
-            const = int(''.join((sign, token.get_tk_value())))
-        else:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected constant but found \'%s\' instead' % token.get_tk_value())
         token = lex()
+        print("bgainw factor")
+        print(token)
     elif token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
         expression()
         if token.get_tk_type()!=TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
+        token = lex()
+
     elif token.get_tk_type()==TokenType.ID_TK:
         token=lex()
         idtail()
