@@ -458,6 +458,8 @@ def statements():
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected statements end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
     else:
+        print("MPAINW STO STATEMENT")
+        print(token)
         statement()
         print("BGHKA APO STATEMENT")
         print(token)
@@ -498,6 +500,8 @@ def statement():
         call_stat()
     elif token.get_tk_type() == TokenType.PRINT_TK:
         token = lex()
+        print("MPAINW Print")
+        print(token)
         print_stat()
     elif token.get_tk_type() == TokenType.INPUT_TK:
         token = lex()
@@ -604,7 +608,9 @@ def incase_stat():
         token = lex()
         if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
             token = lex()
-            #contidion()
+            print("MPAINW condition")
+            print(token)
+            condition()
             if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
                 token = lex()
                 if token.get_tk_type()== TokenType.COLON_TK:
@@ -616,7 +622,6 @@ def incase_stat():
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
         else:
              error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
-        token = lex()
 
 def return_stat():
     global token
@@ -630,11 +635,15 @@ def call_stat():
         actualpars()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected function or procedure id but found \'%s\' instead'% token.get_tk_value())
+    print("BGAINW APO CALL_STAT")
+    print(token)
 
 def print_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
+        print("MPAINW EXPRESSION")
+        print(token)
         expression()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
@@ -664,6 +673,8 @@ def condition():
 
 def boolterm():
     global token
+    print("MPAINW boolfactor")
+    print(token)
     boolfactor()
     while token.get_tk_type() == TokenType.AND_TK:
         token = lex()
@@ -672,7 +683,7 @@ def boolterm():
 def boolfactor():
     global token
     if token.get_tk_type() == TokenType.NOT_TK:
-        token == lex()
+        token = lex()
         if token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
             token = lex()
             condition()

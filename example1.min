@@ -11,6 +11,16 @@ program test2
 			forcase
 				when ( 6 > 7) : a := a + 8
 				default: 
-					a :=a + 9
+					a :=a + 9;
+		incase
+			when ( 10 > 20) : a := a + 30
+			when ( 10 > 20) : a := a + 40
+			when (not[-3>-4]) : a := a + 30;
+		return a+3;
+		call id();
+		print ( (-3+4) * (-3+10) + (-3+4) * (-3+10)  );
+		print ( id ()  );
+		print ( 1000  )
+
 		}
 }
