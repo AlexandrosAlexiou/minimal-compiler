@@ -401,6 +401,8 @@ def subprograms():
         if token.get_tk_type()==TokenType.ID_TK:
             token = lex()
             funcbody()
+            print("BGHKA APO FUNCBODY")
+            print(token)
         else:
              error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram name but found \'%s\' instead.' % token.get_tk_value())
 
@@ -412,6 +414,7 @@ def funcbody():
         block()
         if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
             error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())  
+        token = lex()
     else:
         error('Expected subprogram block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
 
@@ -445,16 +448,19 @@ def formalparitem():
 
 def statements():
     global token
-    statement()
-    print("BGHKA APO STATEMENT")
-    print(token)
-    #token = lex()
     if token.get_tk_type() == TokenType.LEFT_BRACE_TK:
+        token = lex()
+        statement()
         while token.get_tk_type() == TokenType.SEMICOLON_TK:
             token = lex()
             statement()
         if token.get_tk_type()!= TokenType.RIGHT_BRACE_TK:
-            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected statements end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
+        token = lex()
+    else:
+        statement()
+        print("BGHKA APO STATEMENT")
+        print(token)
 
 def statement():
     global token

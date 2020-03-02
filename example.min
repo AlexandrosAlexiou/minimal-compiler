@@ -5,6 +5,12 @@ program test1
 	function alex()
 	{
 		declare a ; 
-		a := 3 
+		{ 
+			a := 3 ;
+			b := 4 ;
+			c := 5 ;
+			b := 5
+		}
 	}
+	a := 100
 }
