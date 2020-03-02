@@ -540,7 +540,7 @@ def while_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        #condition()
+        condition()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
         token = lex()
