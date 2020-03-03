@@ -458,11 +458,7 @@ def statements():
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected statements end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
     else:
-        print("MPAINW STO STATEMENT")
-        print(token)
         statement()
-        print("BGHKA APO STATEMENT")
-        print(token)
 
 def statement():
     global token
@@ -608,8 +604,6 @@ def incase_stat():
         token = lex()
         if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
             token = lex()
-            print("MPAINW condition")
-            print(token)
             condition()
             if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
                 token = lex()
@@ -693,10 +687,11 @@ def boolfactor():
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'[\' after \'not\' but found \'%s\' instead'% token.get_tk_value())
     elif token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
-        token == lex()
+        token = lex()
         condition()
         if token.get_tk_type() != TokenType.RIGHT_BRACKET_TK:
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
+        token = lex()
     else:
         expression()
         relational_oper()
@@ -704,12 +699,8 @@ def boolfactor():
 
 def relational_oper():
     global token
-    if token.get_tk_type() != TokenType.EQUAL_TK and \
-        token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
-        token.get_tk_type() != TokenType.LESS_TK and \
-        token.get_tk_type() != TokenType.GREATER_THAN_OR_EQUAL_TK and \
-        token.get_tk_type() != TokenType.GREATER_TK and \
-        token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
+    if token.get_tk_type() != TokenType.EQUAL_TK and token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and token.get_tk_type() != TokenType.LESS_TK and \
+        token.get_tk_type() != TokenType.GREATER_THAN_OR_EQUAL_TK and token.get_tk_type() != TokenType.GREATER_TK and token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
         token.get_tk_type() != TokenType.NOT_EQUAL_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected relational operator but found \'%s\' instead'% token.get_tk_value())
     token = lex()
