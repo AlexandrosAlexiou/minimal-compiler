@@ -9,7 +9,22 @@ program test1
 			a := 3 ;
 			b := 4 ;
 			c := 5 ;
-			b := 5
+			b := 5 ;
+			a := 100 ;
+			if( 5 > 4) then 
+				a:= 3 
+			else 
+				a :=4;
+
+			if( 100 > 300) then 
+				a:= 3;
+
+			while( 5>3 ) a := a-3;
+
+			while( 1000>30 ) a := a-100;
+
+			doublewhile( 100<3) a := a-10
+				else a := a-1 ;
 		}
 	}
 
@@ -30,12 +45,12 @@ program test1
 		doublewhile( 100<3) a := a-10
 			else a := a-1 ;
 		
-		loop {
+		loop 
+		{
 			a:= a +5000; 
 			a:= a +7000;
 			if( 100 > 300) then 
 				exit
-			}
-
+		}
 	}
 }

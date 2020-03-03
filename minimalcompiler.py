@@ -117,8 +117,6 @@ class Token():
 #         Global declarations and definitions                #
 #                                                            #
 ##############################################################
-
-
 lineno = -1 #Current line number
 charno = -1 #Current Character number from the start of the line
 token = Token(None,None,None,None)
