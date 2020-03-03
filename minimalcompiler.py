@@ -11,11 +11,9 @@ from enum import Enum
 # For Error and warning printing
 class ShellColors:
     GRN    = '\033[92m'
-    WRN    = '\033[95m'
     ERR    = '\033[91m'
     END    = '\033[0m'
     BLD    = '\033[1m'
-    UNDRLN = '\033[4m'
 
 # Token ids
 class TokenType(Enum):
@@ -124,7 +122,6 @@ class Token():
 lineno = -1 #Current line number
 charno = -1 #Current Character number from the start of the line
 token = Token(None,None,None,None)
-mainprog_name =' '
 infile = ''
 
 
@@ -208,7 +205,6 @@ def error_file_not_found(*args, **kwargs):
 
 def error(*args, **kwargs):
     print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']', *args, **kwargs)
-    close_files()
     sys.exit(1)
 
 ##############################################################
