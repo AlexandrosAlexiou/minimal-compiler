@@ -1,3 +1,5 @@
+# ALEXANDROS ALEXIOU 2929 cse52929
+# ATHANASIOS KROKOS 3012  cse53012
 import sys,os
 import string
 from enum import Enum
@@ -109,19 +111,19 @@ class Token():
     def set_tk_charno(self, tk_charno):
         self.__tk_charno=tk_charno
 
+    # Tostring for debugging purposes
     def __str__(self):
         return '('+str(self.__tk_type) +','+ str(self.__tk_value) + ')'
 
 ##############################################################
 #                                                            #
-#     Global declarations and  grammar rules definitions     #
+#                  Global declarations                       #
 #                                                            #
 ##############################################################
 lineno = -1 #Current line number
 charno = -1 #Current Character number from the start of the line
 token = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
 infile = ''
-
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -349,12 +351,12 @@ def lex():
             return Token(TokenType.EOF_TK,'EOF',lineno,0)
         else:
             error_line_message(lineno,charno,'Invalid character.')
+
 ##############################################################
 #                                                            #
 #           Syntax analyzer related functions                #
 #                                                            #
 ##############################################################
-
 def program():
     global token, lineno,charno
     if token.get_tk_type() == TokenType.PROGRAM_TK:
@@ -789,6 +791,7 @@ def main(argv):
     token = lex()
     #Begin syntax analysis
     program()
+    # This is for lex debugging
     '''while True:
         token=lex()
         print(token)
