@@ -15,7 +15,7 @@ program test2
 		incase
 			when ( 10 > 20) : a := a + 30
 			when ( 10 > 20) : a := a + 40
-			when (not[3>4] or not[not[3>4] or not[5>4]]) : a := a + 30;
+			when (not[3>4] or [not[3>4] and not[5>4]]) : a := a + 30;
 		return a+3;
 		call id();
 		print ( (-3+4) * (-3+10) + (-3+4) * (-3+10)  );

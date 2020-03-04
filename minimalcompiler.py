@@ -10,10 +10,10 @@ from enum import Enum
 
 # For Error and warning printing
 class ShellColors:
-    GRN    = '\033[92m'
-    ERR    = '\033[91m'
+    GREEN  = '\033[92m'
+    RED    = '\033[91m'
     END    = '\033[0m'
-    BLD    = '\033[1m'
+    BOLD   = '\033[1m'
 
 # Token ids
 class TokenType(Enum):
@@ -114,15 +114,15 @@ class Token():
 
 ##############################################################
 #                                                            #
-#         Global declarations and definitions                #
+#     Global declarations and  grammar rules definitions     #
 #                                                            #
 ##############################################################
 lineno = -1 #Current line number
 charno = -1 #Current Character number from the start of the line
-token = Token(None,None,None,None)
+token = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
 infile = ''
 
-
+#Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
     '-':            TokenType.MINUS_TK,
@@ -173,6 +173,11 @@ tokens = {
     'then':         TokenType.THEN_TK
 }
 
+##############################################################
+#                                                            #
+#             Files related definitions                      #
+#                                                            #
+##############################################################
 # Open files.
 def open_files(input_file):
     global infile,lineno,charno
@@ -185,24 +190,28 @@ def close_files():
     global infile
     infile.close()
 
-# Error messages printing beatifully
-def error_line_message(lineno, charno, *args, **kwargs):
-    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']', ShellColors.BLD + '%s:%d:%d:' %(infile.name, lineno, charno) + ShellColors.END, *args,  **kwargs)
+##############################################################
+#                                                            #
+#          Error printing related definitions                #
+#                                                            #
+##############################################################
+def error_line_message(lineno, charno, *args):
+    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', ShellColors.BOLD + '%s:%d:%d:' %(infile.name, lineno, charno) + ShellColors.END, *args)
     # character pointer
     infile.seek(0)
-    for index, line in enumerate(infile):
-        if index == lineno-1:
+    for i, line in enumerate(infile):
+        if i == lineno-1:
             print(line.replace('\t', ' ').replace('\n', ' '))
-            print(ShellColors.GRN + " " * (charno-1) + '^' + ShellColors.END)
+            print(ShellColors.GREEN + ' ' * (charno-1) + '^' + ShellColors.END)
     close_files()
     sys.exit(1)
 
-def error_file_not_found(*args, **kwargs):
-    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']'+ ' File:'+ShellColors.GRN +' '+ sys.argv[1] + ' '+ShellColors.END+'not found.')
+def error_file_not_found():
+    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']'+ ' File:'+ShellColors.GREEN +' '+ sys.argv[1] + ' '+ShellColors.END+'not found.')
     sys.exit(1)
 
-def error(*args, **kwargs):
-    print('[' + ShellColors.ERR + 'ERROR' + ShellColors.END + ']', *args, **kwargs)
+def error(*args):
+    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
     sys.exit(1)
 
 ##############################################################
@@ -395,8 +404,6 @@ def subprograms():
         if token.get_tk_type()==TokenType.ID_TK:
             token = lex()
             funcbody()
-            print("BGHKA APO FUNCBODY")
-            print(token)
         else:
              error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram name but found \'%s\' instead.' % token.get_tk_value())
 
@@ -407,10 +414,10 @@ def funcbody():
         token = lex()
         block()
         if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
-            error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())  
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())  
         token = lex()
     else:
-        error('Expected subprogram block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
 
 def formalpars():
     global token
@@ -476,8 +483,6 @@ def statement():
         #exit_stat() ???
     elif token.get_tk_type() == TokenType.FORCASE_TK:
         token = lex()
-        print("MPAINW FOR CASE")
-        print(token)
         forcase_stat()
     elif token.get_tk_type() == TokenType.INCASE_TK:
         token = lex()
@@ -490,21 +495,15 @@ def statement():
         call_stat()
     elif token.get_tk_type() == TokenType.PRINT_TK:
         token = lex()
-        print("MPAINW Print")
-        print(token)
         print_stat()
     elif token.get_tk_type() == TokenType.INPUT_TK:
         token = lex()
         input_stat()
     
 def assignment_stat():
-    print("MPHKA ASSIGNMENT")
     global token
-    print(token)
     if token.get_tk_type()==TokenType.ASSIGN_TK:
         token=lex()
-        print("MPHKA EXPRESSION")
-        print(token)
         expression()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':=\' but found \'%s\' instead' % token.get_tk_value())
@@ -623,15 +622,11 @@ def call_stat():
         actualpars()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected function or procedure id but found \'%s\' instead'% token.get_tk_value())
-    print("BGAINW APO CALL_STAT")
-    print(token)
 
 def print_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        print("MPAINW EXPRESSION")
-        print(token)
         expression()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
@@ -661,8 +656,6 @@ def condition():
 
 def boolterm():
     global token
-    print("MPAINW boolfactor")
-    print(token)
     boolfactor()
     while token.get_tk_type() == TokenType.AND_TK:
         token = lex()
@@ -708,29 +701,21 @@ def expression():
         term()
         
 def optional_sign():
-    print("MPHKA OPTIONAL SIGN")
     global token
-    print(token)
     if token.get_tk_type()== TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
         add_oper()
     
 def term():
     global token 
-    print("MPHKA TERM")
-    print(token)
     factor()
     while token.get_tk_type()==TokenType.SLASH_TK or token.get_tk_type()==TokenType.TIMES_TK:
         mul_oper()
         factor()
         
-def factor():
-    print("MPHKA FACTOR")
+def factor(): 
     global token
-    print(token)
     if token.get_tk_type() == TokenType.NUMBER_TK or token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
         token = lex()
-        print("bgainw factor")
-        print(token)
     elif token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
         expression()
@@ -802,6 +787,7 @@ def main(argv):
     open_files(argv)
     global token
     token = lex()
+    #Begin syntax analysis
     program()
     '''while True:
         token=lex()

@@ -4,14 +4,14 @@ program test1
 
 	function alex()
 	{
-		declare a ; 
+		declare a; 
 		{ 
-			a := 3 ;
-			b := 4 ;
-			c := 5 ;
-			b := 5 ;
-			a := 100 ;
-			if( 5 > 4) then 
+			a := 3;
+			b := 4;
+			c := 5;
+			b := 5;
+			a := 100;
+			if( 5 <> 4 and not[a=100] or b=8) then 
 				a:= 3 
 			else 
 				a :=4;
@@ -24,7 +24,7 @@ program test1
 			while( 1000>30 ) a := a-100;
 
 			doublewhile( 100<3) a := a-10
-				else a := a-1 ;
+				else a := a-1;
 		}
 	}
 
@@ -50,7 +50,8 @@ program test1
 			a:= a +5000; 
 			a:= a +7000;
 			if( 100 > 300) then 
-				exit
+				exit;
+			a:= a + 7
 		}
 	}
 }
