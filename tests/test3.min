@@ -1,0 +1,11 @@
+program test3
+{   
+    declare a;
+    loop 
+		{
+			a:= a +5000 ; 
+			b:= a +7000 ;
+			if( 100 > 300) then exit ;
+			b:= a + 7 
+		}
+}

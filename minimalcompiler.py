@@ -115,6 +115,50 @@ class Token():
     def __str__(self):
         return '('+str(self.__tk_type) +','+ str(self.__tk_value) + ')'
 
+class Quad():
+    # eg. 100: +,a,b,c
+    def __init__(self,label,op,var1,var2,res):
+        self.__label = label    # eg. 100,101
+        self.__op = op  # +,-,*,/
+        self.__var1= var1 # variable name or constant
+        self.__var2= var2 # variable name or constant
+        self.__res= res   # variable name
+    
+    def get_label(self):
+        return self.__label
+    
+    def set_label(self, label):
+        self.__label=label
+
+    def get_op(self):
+        return self.__op
+
+    def set_op(self, op):
+        self.__op=op
+    
+    def get_var1(self):
+        return self.__var1
+
+    def set_var1(self, var1):
+        self.__var1=var1
+
+    def get_var2(self):
+        return self.__var2
+
+    def set_var1(self, var2):
+        self.__var2=var2
+    
+    def get_res(self):
+        return self.__res
+
+    def set_res(self, res):
+        self.__res=res
+
+    # Tostring for debugging purposes
+    def __str__(self):
+        return '(' + str(self.__label) + ': ' + str(self.__op)+ ', ' + \
+            str(self.__var1) + ', ' + str(self.__var2) + ', ' + str(self.__res) + ')'
+
 ##############################################################
 #                                                            #
 #                  Global declarations                       #
@@ -124,6 +168,7 @@ lineno = -1 #Current line number
 charno = -1 #Current Character number from the start of the line
 token = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
 infile = ''
+mainprogram_name=''
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -185,7 +230,7 @@ def open_files(input_file):
     global infile,lineno,charno
     lineno=1
     charno=0
-    infile = open(input_file,"r+")
+    infile =  open(input_file,  'r', encoding='utf-8')
 
 # Close files.
 def close_files():
@@ -223,13 +268,13 @@ def error(*args):
 ##############################################################
 def lex():
     
-    global lineno,charno
+    global lineno,charno,infile
     character = infile.read(1)
     charno+=1
     
     # File is allowed to have empty lines tabs and spaces at the start
-    while (character == ' ' or character == "\n" or character == "\t"):
-        if character == "\n":
+    while (character is ' ' or character is "\n" or character is "\t"):
+        if character is "\n":
             lineno += 1
             charno=0
         character = infile.read(1)
@@ -263,6 +308,8 @@ def lex():
                         error_line_message(lineno,charno-1,'Variable names should begin with alphabetic character.')
             infile.seek(infile.tell() - 1)
             charno-=1
+            '''character = infile.read(1)
+            print("NEXT CHAR IS:"+character+"end")'''
             if int(buffer) > 32767 or int(buffer) < -32767:
                 error_line_message(lineno,charno,'Integer value should be between [-32767,32767].')
             return Token(TokenType.NUMBER_TK,buffer,lineno,charno)
@@ -368,12 +415,14 @@ def program():
                 block()
                 if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
                     error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
+                token=lex()
             else:
                 error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
         else:
            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected program name but found \'%s\' instead.' % token.get_tk_value())
     else:
         error('Expected \'program\' keyword but found \'%s\' instead.' % token.get_tk_value())
+    
 
 def block():
     declarations()
@@ -501,6 +550,8 @@ def statement():
     elif token.get_tk_type() == TokenType.INPUT_TK:
         token = lex()
         input_stat()
+    else:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected statement but found \'%s\' instead' % token.get_tk_value())
     
 def assignment_stat():
     global token
@@ -791,12 +842,21 @@ def main(argv):
     token = lex()
     #Begin syntax analysis
     program()
-    # This is for lex debugging
-    '''while True:
+    if token.get_tk_type() != TokenType.EOF_TK:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),
+            'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
+    '''# This is for lex debugging
+    while True:
         token=lex()
         print(token)
         print('\n')
         if token.get_tk_type()==TokenType.EOF_TK:
+            break'''
+    '''while True:
+        character = infile.read(1)
+        print(character)
+        print('\n')
+        if character=='':
             break'''
     close_files()
 
