@@ -145,7 +145,7 @@ class Quad():
     def get_var2(self):
         return self.__var2
 
-    def set_var1(self, var2):
+    def set_var2(self, var2):
         self.__var2=var2
     
     def get_res(self):
