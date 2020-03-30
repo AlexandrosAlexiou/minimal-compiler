@@ -17,6 +17,7 @@ class ShellColors:
     END    = '\033[0m'
     BOLD   = '\033[1m'
 
+
 # Token ids
 class TokenType(Enum):
     ID_TK = 0
@@ -78,8 +79,10 @@ class TokenType(Enum):
     #End Of File
     EOF_TK =51
 
+
 # Lexical analyzer return values to the syntax analyzer
 class Token():
+
 
     def __init__(self,tk_type,tk_value,tk_lineno,tk_charno):
         self.__tk_type = tk_type    # token type
@@ -87,77 +90,100 @@ class Token():
         self.__tk_lineno= tk_lineno # token line number
         self.__tk_charno= tk_charno # token character number from the start of the line
 
+
     def get_tk_type(self):
         return self.__tk_type
     
+
     def set_tk_type(self, tk_type):
         self.__tk_type=tk_type
+
 
     def get_tk_value(self):
         return self.__tk_value
 
+
     def set_tk_value(self, tk_value):
         self.__tk_value=tk_value
-    
+
+
     def get_tk_lineno(self):
         return self.__tk_lineno
 
+
     def set_tk_lineno(self, tk_lineno):
         self.__tk_lineno=tk_lineno
-    
+
+
     def get_tk_charno(self):
         return self.__tk_charno
 
+
     def set_tk_charno(self, tk_charno):
         self.__tk_charno=tk_charno
+
 
     # Tostring for debugging purposes
     def __str__(self):
         return '('+str(self.__tk_type) +','+ str(self.__tk_value) + ')'
 
+
 class Quad():
+
     # eg. 100: +,a,b,c
     def __init__(self,label,op,var1,var2,res):
         self.__label = label    # eg. 100,101
-        self.__op = op  # +,-,*,/
-        self.__var1= var1 # variable name or constant
-        self.__var2= var2 # variable name or constant
-        self.__res= res   # variable name
+        self.__op = op          # +,-,*,/
+        self.__var1= var1       # variable name or constant
+        self.__var2= var2       # variable name or constant
+        self.__res= res         # variable name
     
+
     def get_label(self):
         return self.__label
     
+
     def set_label(self, label):
         self.__label=label
+
 
     def get_op(self):
         return self.__op
 
+
     def set_op(self, op):
         self.__op=op
     
+
     def get_var1(self):
         return self.__var1
+
 
     def set_var1(self, var1):
         self.__var1=var1
 
+
     def get_var2(self):
         return self.__var2
+
 
     def set_var2(self, var2):
         self.__var2=var2
     
+
     def get_res(self):
         return self.__res
 
+
     def set_res(self, res):
         self.__res=res
+
 
     # Tostring for debugging purposes
     def __str__(self):
         return '(' + str(self.__label) + ': ' + str(self.__op)+ ', ' + \
             str(self.__var1) + ', ' + str(self.__var2) + ', ' + str(self.__res) + ')'
+
 
 ##############################################################
 #                                                            #
@@ -168,11 +194,12 @@ lineno              = -1 #Current line number
 charno              = -1 #Current Character number from the start of the line
 token               = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
 infile              = ''
-mainprogram_name    =''
+mainprogram_name    = ''
 quad_code           = list() # The main program equivalent in quadruples.
 nextlabel           = 0 
 tmpvars             = dict() # A dictionary holding temporary variable names used in intermediate code generation.
 next_tmpvar         = 1      # Used to implement the naming convention of temporary variables.
+halt_label          = -1
 
 #Dictionary to store bound words and token values
 tokens = {
@@ -235,7 +262,8 @@ def open_files(input_file):
     global infile,lineno,charno
     lineno=1
     charno=0
-    infile =  open(input_file,  'r', encoding='utf-8')
+    infile = open(input_file,  'r', encoding='utf-8')
+
 
 # Close files.
 def close_files():
@@ -258,13 +286,16 @@ def error_line_message(lineno, charno, *args):
     close_files()
     sys.exit(1)
 
+
 def error_file_not_found():
     print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']'+ ' File:'+ShellColors.GREEN +' '+ sys.argv[1] + ' '+ShellColors.END+'not found.')
     sys.exit(1)
 
+
 def error(*args):
     print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
     sys.exit(1)
+
 
 ##############################################################
 #                                                            #
@@ -274,12 +305,14 @@ def error(*args):
 def next_quad():
     return nextlabel
 
+
 def gen_quad(op=None, arg1='_', arg2='_', res='_'):
     global nextlabel
     label = nextlabel
     nextlabel += 1
     newquad  = Quad(label, op, arg1, arg2, res)
     quad_code.append(newquad)
+
 
 def new_temp():
     global tmpvars, next_tmpvar
@@ -288,21 +321,25 @@ def new_temp():
     next_tmpvar += 1
     return key
 
+
 def empty_list():
     return list()
+
 
 def make_list(label):
     newlist = list()
     newlist.append(label)
     return newlist
 
+
 def merge(list1, list2):
     return list1 + list2
+
 
 def backpatch(somelist, res):
     global quad_code
     for quad in quad_code:
-        if quad.label in somelist:
+        if quad.get_label() in somelist:
             quad.res = res
             
 ##############################################################
@@ -443,20 +480,22 @@ def lex():
         else:
             error_line_message(lineno,charno,'Invalid character.')
 
+
 ##############################################################
 #                                                            #
 #           Syntax analyzer related functions                #
 #                                                            #
 ##############################################################
 def program():
-    global token, lineno,charno
+    global token, lineno, charno,  mainprogram_name
     if token.get_tk_type() == TokenType.PROGRAM_TK:
         token = lex()
         if token.get_tk_type() == TokenType.ID_TK:
+            mainprogram_name = name = token.get_tk_value()
             token = lex()
             if token.get_tk_type()== TokenType.LEFT_BRACE_TK:
                 token = lex()
-                block()
+                block(name)
                 if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
                     error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
                 token=lex()
@@ -468,19 +507,26 @@ def program():
         error('Expected \'program\' keyword but found \'%s\' instead.' % token.get_tk_value())
     
 
-def block():
+def block(name):
     declarations()
-    subprograms() 
+    subprograms()
+    gen_quad('begin_block', name)
     statements() 
+    if name == mainprogram_name:
+        halt_label = next_quad()
+        gen_quad('halt')
+    gen_quad('end_block', name)
+
 
 def declarations():
     global token
-    if token.get_tk_type()== TokenType.DECLARE_TK:
+    while token.get_tk_type()== TokenType.DECLARE_TK:
         token = lex()
         varlist() 
         if token.get_tk_type() != TokenType.SEMICOLON_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \';\' but found \'%s\' instead' % token.get_tk_value())
         token = lex()
+
 
 def varlist():
     global token
@@ -492,55 +538,62 @@ def varlist():
                error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected variable declaration but found \'%s\' instead' % token.get_tk_value())
             token = lex()
 
+
 def subprograms():
     global token
     while token.get_tk_type()==TokenType.FUNCTION_TK or token.get_tk_type()==TokenType.PROCEDURE_TK:
         token = lex()
         if token.get_tk_type()==TokenType.ID_TK:
+            name = token.get_tk_value()
             token = lex()
-            funcbody()
+            funcbody(name)
         else:
              error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram name but found \'%s\' instead.' % token.get_tk_value())
 
-def funcbody():
+
+def funcbody(name):
     global token
-    formalpars()
+    formalpars(name)
     if token.get_tk_type()==TokenType.LEFT_BRACE_TK:
         token = lex()
-        block()
+        block(name)
         if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())  
         token = lex()
     else:
         error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
 
-def formalpars():
+
+def formalpars(func_name):
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
-        formalparlist()
+        formalparlist(func_name)
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token=lex()
     else:
         error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead.' % token.get_tk_value()) 
 
-def formalparlist():
+
+def formalparlist(func_name):
     global token
-    formalparitem()
+    formalparitem(func_name)
     while token.get_tk_type() == TokenType.COMMA_TK:
         token = lex()
         if token.get_tk_type() != TokenType.IN_TK and token.get_tk_type() != TokenType.INOUT_TK:
            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter declaration but found \'%s\' instead'% token.get_tk_value())
-        formalparitem()
+        formalparitem(func_name)
 
-def formalparitem():
+
+def formalparitem(func_name):
     global token
     if token.get_tk_type() == TokenType.IN_TK or token.get_tk_type() == TokenType.INOUT_TK:
         token = lex()
         if token.get_tk_type() != TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter name but found \'%s\' instead'% token.get_tk_value()) 
         token = lex()
+
 
 def statements():
     global token
@@ -556,11 +609,14 @@ def statements():
     else:
         statement()
 
+
 def statement():
     global token
     if token.get_tk_type() == TokenType.ID_TK:
+        lhand = token.get_tk_value()
         token = lex()
-        assignment_stat()
+        rhand = assignment_stat()
+        gen_quad(':=', rhand,'_', lhand)
     elif token.get_tk_type() == TokenType.IF_TK:
         token = lex()
         if_stat()
@@ -574,6 +630,8 @@ def statement():
         token = lex()
         loop_stat()
     elif token.get_tk_type() == TokenType.EXIT_TK:
+        exit_list = make_list(next_quad())
+        gen_quad('jump')
         token = lex()
         #exit_stat() ???
     elif token.get_tk_type() == TokenType.FORCASE_TK:
@@ -596,31 +654,39 @@ def statement():
         input_stat()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected statement but found \'%s\' instead' % token.get_tk_value())
-    
+
+
 def assignment_stat():
     global token
     if token.get_tk_type()==TokenType.ASSIGN_TK:
         token=lex()
-        expression()
+        return expression()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':=\' but found \'%s\' instead' % token.get_tk_value())
+
 
 def if_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        condition() 
+        (b_true,b_false) = condition() 
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' after if condition but found \'%s\' instead' % token.get_tk_value())
         token = lex()
         if token.get_tk_type() == TokenType.THEN_TK:
             token = lex()
+            backpatch(b_true, next_quad())
             statements()
+            temp_list = make_list(next_quad())
+            gen_quad('jump')
+            backpatch(b_false, next_quad())
             elsepart()
+            backpatch(temp_list, next_quad())
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead' % token.get_tk_value())
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after if token but found \'%s\' instead' % token.get_tk_value())        
+
 
 def elsepart():
     global token
@@ -628,17 +694,23 @@ def elsepart():
         token = lex()
         statements()
 
+
 def while_stat():
     global token
+    b_quad = next_quad()
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        condition()
+        (b_true, b_false) = condition()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
         token = lex()
+        backpatch(b_true, next_quad())
         statements()
+        gen_quad('jump','_','_',b_quad)
+        backpatch(b_false, next_quad())
     else:
          error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'while\' but found \'%s\' instead'% token.get_tk_value())
+
 
 def doublewhile_stat():
     global token
@@ -656,8 +728,10 @@ def doublewhile_stat():
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'doublewhile\' but found \'%s\' instead'% token.get_tk_value())
 
+
 def loop_stat():
     statements()
+
 
 def forcase_stat():
     global token
@@ -688,6 +762,7 @@ def forcase_stat():
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'default:\' declaration but found \'%s\' instead'% token.get_tk_value())
 
+
 def incase_stat():
     global token
     while token.get_tk_type()== TokenType.WHEN_TK:
@@ -707,29 +782,37 @@ def incase_stat():
         else:
              error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
 
+
 def return_stat():
     global token
     token = lex()
-    expression()
+    exp = expression()
+    gen_quad('retv', exp)
+
 
 def call_stat():
     global token
     if token.get_tk_type() == TokenType.ID_TK:
+        subprog_id = token.get_tk_value()
         token = lex()
         actualpars()
+        gen_quad('call',subprog_id)
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected function or procedure id but found \'%s\' instead'% token.get_tk_value())
+
 
 def print_stat():
     global token
     if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        expression()
+        exp = expression()
+        gen_quad('out',exp)
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
         token = lex()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+
 
 def input_stat():
     global token
@@ -737,6 +820,8 @@ def input_stat():
         token = lex()
         if token.get_tk_type() != TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead'% token.get_tk_value())
+        id_name = token.get_tk_value()
+        gen_quad('inp',id_name)
         token = lex()
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
@@ -744,19 +829,30 @@ def input_stat():
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
 
+
 def condition():
     global token
-    boolterm()
+    (b_true,b_false) = (b1_true, b1_false) = boolterm()
     while token.get_tk_type() == TokenType.OR_TK:
+        backpatch(b_false, next_quad())
         token = lex()
-        boolterm()
+        (b2_true, b2_false) =boolterm()
+        b_true = merge(b_true, b2_true)
+        b_false = b2_false
+    return (b_true, b_false)
+
 
 def boolterm():
     global token
-    boolfactor()
+    (q_true, q_false) = (r1_true, r1_false) = boolfactor()
     while token.get_tk_type() == TokenType.AND_TK:
+        backpatch(q_true, next_quad())
         token = lex()
-        boolfactor()
+        (r2_true, r2_false) = boolfactor()
+        q_false = merge (q_false, r2_false)
+        q_true  = r2_true
+    return (q_true, q_false)
+
 
 def boolfactor():
     global token
@@ -764,7 +860,8 @@ def boolfactor():
         token = lex()
         if token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
             token = lex()
-            condition()
+            ret = condition()
+            ret = ret[::-1]
             if token.get_tk_type() != TokenType.RIGHT_BRACKET_TK:
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
             token = lex()
@@ -772,76 +869,129 @@ def boolfactor():
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'[\' after \'not\' but found \'%s\' instead'% token.get_tk_value())
     elif token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
         token = lex()
-        condition()
+        ret = condition()
         if token.get_tk_type() != TokenType.RIGHT_BRACKET_TK:
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
         token = lex()
     else:
-        expression()
-        relational_oper()
-        expression()
+        exp1 = expression()
+        op   = relational_oper()
+        exp2 = expression()
+        r_true = make_list(next_quad())
+        gen_quad(op , exp1, exp2)
+        r_false = make_list(next_quad())
+        gen_quad('jump')
+        ret = (r_true, r_false)
+    return ret
+
 
 def relational_oper():
     global token
+    op = token.get_tk_value()
     if token.get_tk_type() != TokenType.EQUAL_TK and token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and token.get_tk_type() != TokenType.LESS_TK and \
         token.get_tk_type() != TokenType.GREATER_THAN_OR_EQUAL_TK and token.get_tk_type() != TokenType.GREATER_TK and token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
         token.get_tk_type() != TokenType.NOT_EQUAL_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected relational operator but found \'%s\' instead'% token.get_tk_value())
     token = lex()
+    return op
+
 
 def expression():
     global token
-    optional_sign()
-    term()
+    op_sign = optional_sign()
+    term_1 = term()
+    if op_sign != None:
+        signtmp = new_temp()
+        gen_quad('-', 0, term_1, signtmp)
+        term_1 = signtmp
     while token.get_tk_type()==TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
-        add_oper()
-        term()
-        
+        oper = add_oper()
+        term_2   = term()
+        tmpvar   = new_temp()
+        gen_quad(oper, term_1, term_2, tmpvar)
+        term_1 = tmpvar
+    return term_1
+
+
 def optional_sign():
     global token
     if token.get_tk_type()== TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
-        add_oper()
-    
+        return add_oper()
+
+
 def term():
     global token 
-    factor()
+    factor_1 = factor()
     while token.get_tk_type()==TokenType.SLASH_TK or token.get_tk_type()==TokenType.TIMES_TK:
-        mul_oper()
-        factor()
-        
+        m_oper = mul_oper()
+        factor_2 = factor()
+        tmpvar   = new_temp()
+        gen_quad(m_oper, factor_1, factor_2, tmpvar)
+        factor_1 = tmpvar
+    return factor_1
+
+
 def factor(): 
     global token
     if token.get_tk_type() == TokenType.NUMBER_TK or token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
-        token = lex()
+        ret = number_const()
     elif token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
-        expression()
+        ret = expression()
         if token.get_tk_type()!=TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
         token = lex()
 
     elif token.get_tk_type()==TokenType.ID_TK:
+        ret = token.get_tk_value()
         token=lex()
-        idtail()
+        tail = idtail()
+        if tail != None:
+            function_return = new_temp()
+            gen_quad('par', function_return, 'RET')
+            gen_quad('call', ret)
     else: 
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead' % token.get_tk_value())
+    return ret
+
+
+def number_const():
+    global token
+    sign = '+'
+    if token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
+        sign = token.get_tk_value()
+        token = lex()
+    if token.get_tk_type() == TokenType.NUMBER_TK:
+        number = int(''.join((sign, token.get_tk_value())))
+    else:
+        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected number constant but found \'%s\' instead' % token.get_tk_value())
+    token = lex()
+    return number
+
 
 def idtail():
    global token
    if token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
-       actualpars() 
+        return actualpars() 
+
 
 def add_oper():
     global token
+    op = token.get_tk_value()
     if token.get_tk_type()!= TokenType.PLUS_TK and token.get_tk_type()!= TokenType.MINUS_TK :
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'+\' or \'-\' but found \'%s\' instead' % token.get_tk_value())
     token=lex()
+    return op
+
 
 def mul_oper():
     global token
+    op = token.get_tk_value()
     if token.get_tk_type() != TokenType.TIMES_TK and token.get_tk_type() != TokenType.SLASH_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'*\' or \'/\' but found \'%s\' instead' % token.get_tk_value())
     token = lex()
+    return op
+
 
 def actualpars():
     global token
@@ -851,8 +1001,10 @@ def actualpars():
         if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
         token = lex()
+        return True
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after procedure or function call  but found \'%s\' instead'% token.get_tk_value())
+
 
 def actualparlist():
     global token
@@ -862,18 +1014,23 @@ def actualparlist():
             token = lex()
             actualparitem()
 
+
 def actualparitem():
     global token
     if token.get_tk_type() == TokenType.IN_TK:
         token = lex()
-        expression()
+        exp = expression()
+        gen_quad('par', exp, 'CV')
     elif token.get_tk_type() == TokenType.INOUT_TK:
         token = lex()
+        parameter_id = token.get_tk_value()
         if token.get_tk_type() != TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead' % token.get_tk_value())
         token = lex()
+        gen_quad('par', parameter_id, 'REF')
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected parameter type in or inout but found \'%s\' instead' % token.get_tk_value())
+
 
 ##############################################################
 #                                                            #
@@ -889,8 +1046,12 @@ def main(argv):
     if token.get_tk_type() != TokenType.EOF_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),
             'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
-    '''# This is for lex debugging
-    while True:
+    
+    for Quad in quad_code:
+        print(Quad)
+            
+    # This is for lex debugging
+    '''while True:
         token=lex()
         print(token)
         print('\n')
@@ -903,6 +1064,7 @@ def main(argv):
         if character=='':
             break'''
     close_files()
+
 
 if __name__=='__main__':
 
