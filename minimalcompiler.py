@@ -341,7 +341,7 @@ def backpatch(somelist, res):
     for quad in quad_code:
         if quad.get_label() in somelist:
             quad.set_res(res)
-            print(res)
+            #print(res)
             
 ##############################################################
 #                                                            #
@@ -351,18 +351,16 @@ def backpatch(somelist, res):
 def lex():
     
     global lineno,charno,infile
-    character = infile.read(1)
-    charno+=1
-    
-    # File is allowed to have empty lines tabs and spaces at the start
-    while (character is ' ' or character is "\n" or character is "\t"):
-        if character is "\n":
-            lineno += 1
-            charno=0
+    while(True):
         character = infile.read(1)
         charno+=1
-
-    while True:
+        # File is allowed to have empty lines tabs and spaces at the start
+        while (character is ' ' or character is "\n" or character is "\t"):
+            if character is "\n":
+                lineno += 1
+                charno=0
+            character = infile.read(1)
+            charno+=1
         buffer = character
         #print(buffer)
         if character.isalpha():
@@ -372,12 +370,12 @@ def lex():
                 buffer+=character
                 character = infile.read(1)
                 charno+=1
-            infile.seek(infile.tell() - 1)
-            charno-=1
             if buffer in tokens.keys():
                 retval = Token(tokens[buffer],buffer,lineno,charno)
             else:
                 retval = Token(TokenType.ID_TK,buffer,lineno,charno)
+            infile.seek(infile.tell() - 1)
+            charno-=1
             return retval
         elif character.isnumeric():
             while character.isnumeric():
@@ -388,13 +386,13 @@ def lex():
                 else:
                     if character.isalpha():
                         error_line_message(lineno,charno-1,'Variable names should begin with alphabetic character.')
-            infile.seek(infile.tell() - 1)
-            charno-=1
             if int(buffer) > 32767 or int(buffer) < -32767:
                 error_line_message(lineno,charno,'Integer value should be between [-32767,32767].')
+            infile.seek(infile.tell() - 1)
+            charno-=1
             return Token(TokenType.NUMBER_TK,buffer,lineno,charno)
         elif character is '+':
-           return Token(TokenType.PLUS_TK,buffer,lineno,charno)
+            return Token(TokenType.PLUS_TK,buffer,lineno,charno)
         elif character is '-':
             return Token(TokenType.MINUS_TK,buffer,lineno,charno)
         elif character is '*':
@@ -412,14 +410,14 @@ def lex():
             comments_line=lineno
             charno+=1
             if character is '*':
-                while (1):
+                while(True):
                     character = infile.read(1)
                     if not character:
                         error_line_message(comments_line,comments_charno,'Comments opened. Expected  "*/"  but EOF reached.')
                     if character is '*':
                         character = infile.read(1)
                         if character is '/':
-                            return lex()
+                            break
                     elif character is '\n':
                         lineno += 1
                         charno=0
@@ -427,14 +425,13 @@ def lex():
                 while(character is not '\n'):
                     character=infile.read(1)
                 lineno+=1
-                charno=0
-                return lex()                        
+                charno=0                       
             else:
                 infile.seek(infile.tell() - 1)
                 charno-=1
                 return Token(TokenType.SLASH_TK,buffer,lineno,charno)                                    
         elif character is '(':
-           return Token(TokenType.LEFT_PARENTHESIS_TK,buffer,lineno,charno)
+            return Token(TokenType.LEFT_PARENTHESIS_TK,buffer,lineno,charno)
         elif character is ')':
             return Token(TokenType.RIGHT_PARENTHESIS_TK,buffer,lineno,charno)
         elif character is '[':
@@ -679,15 +676,15 @@ def if_stat():
         if token.get_tk_type() == TokenType.THEN_TK:
             token = lex()
             backpatch(b_true, next_quad())
-            print("ekana backpatch thn btrue")
+            #print("ekana backpatch thn btrue")
             statements()
             if_list = make_list(next_quad())
             gen_quad('jump')
             backpatch(b_false, next_quad())
-            print("ekana backpatch thn bfalse")
+            #print("ekana backpatch thn bfalse")
             elsepart()
             backpatch(if_list, next_quad())
-            print("ekana backpatch thn iflist")
+            #print("ekana backpatch thn iflist")
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead' % token.get_tk_value())
     else:
