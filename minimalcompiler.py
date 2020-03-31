@@ -340,7 +340,8 @@ def backpatch(somelist, res):
     global quad_code
     for quad in quad_code:
         if quad.get_label() in somelist:
-            quad.res = res
+            quad.set_res(res)
+            print(res)
             
 ##############################################################
 #                                                            #
@@ -389,8 +390,6 @@ def lex():
                         error_line_message(lineno,charno-1,'Variable names should begin with alphabetic character.')
             infile.seek(infile.tell() - 1)
             charno-=1
-            '''character = infile.read(1)
-            print("NEXT CHAR IS:"+character+"end")'''
             if int(buffer) > 32767 or int(buffer) < -32767:
                 error_line_message(lineno,charno,'Integer value should be between [-32767,32767].')
             return Token(TokenType.NUMBER_TK,buffer,lineno,charno)
@@ -404,6 +403,8 @@ def lex():
             if character == '/':
                 error_line_message(lineno,charno,'Expected "/*" to open comments before "*/" .')
             else :
+                infile.seek(infile.tell() - 1)
+                charno-=1
                 return Token(TokenType.TIMES_TK,buffer,lineno,charno)
         elif character is '/':
             character = infile.read(1)
@@ -428,7 +429,9 @@ def lex():
                 lineno+=1
                 charno=0
                 return lex()                        
-            elif character is not '/':
+            else:
+                infile.seek(infile.tell() - 1)
+                charno-=1
                 return Token(TokenType.SLASH_TK,buffer,lineno,charno)                                    
         elif character is '(':
            return Token(TokenType.LEFT_PARENTHESIS_TK,buffer,lineno,charno)
@@ -676,12 +679,15 @@ def if_stat():
         if token.get_tk_type() == TokenType.THEN_TK:
             token = lex()
             backpatch(b_true, next_quad())
+            print("ekana backpatch thn btrue")
             statements()
-            temp_list = make_list(next_quad())
+            if_list = make_list(next_quad())
             gen_quad('jump')
             backpatch(b_false, next_quad())
+            print("ekana backpatch thn bfalse")
             elsepart()
-            backpatch(temp_list, next_quad())
+            backpatch(if_list, next_quad())
+            print("ekana backpatch thn iflist")
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead' % token.get_tk_value())
     else:
@@ -933,8 +939,9 @@ def term():
 
 def factor(): 
     global token
-    if token.get_tk_type() == TokenType.NUMBER_TK or token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
-        ret = number_const()
+    if token.get_tk_type() == TokenType.NUMBER_TK :
+        ret = token.get_tk_value()
+        token = lex()
     elif token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
         ret = expression()
@@ -953,20 +960,6 @@ def factor():
     else: 
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead' % token.get_tk_value())
     return ret
-
-
-def number_const():
-    global token
-    sign = '+'
-    if token.get_tk_type() == TokenType.PLUS_TK or token.get_tk_type() == TokenType.MINUS_TK:
-        sign = token.get_tk_value()
-        token = lex()
-    if token.get_tk_type() == TokenType.NUMBER_TK:
-        number = int(''.join((sign, token.get_tk_value())))
-    else:
-        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected number constant but found \'%s\' instead' % token.get_tk_value())
-    token = lex()
-    return number
 
 
 def idtail():
@@ -1046,7 +1039,7 @@ def main(argv):
     if token.get_tk_type() != TokenType.EOF_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),
             'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
-    
+    # print quad equivalent code
     for Quad in quad_code:
         print(Quad)
             

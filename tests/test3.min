@@ -1,12 +1,20 @@
 program test3
 {   
     declare a;
+	function alex(){
+		declare a ;
 
-    loop 
-		{
+		function sim(){
+			declare c;
+			c := 3
+		}
+		a := 3
+	}
+    loop{
 			a:= a +5000 ; 
 			b:= a +7000 ;
-			if( 100 > 300) then exit ;
-			b:= a + 7
-		}
+			b:= a + 7;
+			call alex(in b)
+	}
+	
 }
