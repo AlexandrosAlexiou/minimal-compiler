@@ -3,21 +3,21 @@ program test1
 	declare k;
 
 	{
-		a := 100/4;
-		if( 5 > 4 ) then 
-			a:= 3 
+		a := 30;
+		if(5>4) then 
+			a:=3 
 		else 
-			a :=4;
+			a:=4;
 
 		if( 1000 > 300 and 10<100) then 
 			a:= 3
 		else 
 			a := 555;
 
-		while( 5>3 ) 
+		while(5>3) 
 			a := a-3 ;
 
-		while( 1000>30 ) 
+		while(1000>30) 
 			a := a-100
 	}
-	}
+}

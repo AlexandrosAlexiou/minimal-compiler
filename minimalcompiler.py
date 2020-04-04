@@ -1,9 +1,8 @@
-# ALEXANDROS ALEXIOU 2929 cse52929
-# ATHANASIOS KROKOS 3012  cse53012
-import sys,os
+#!/usr/bin/env python3
+import sys
+import os
 import string
 from enum import Enum
-
 ##############################################################
 #                                                            #
 #                     Class definitions                      #
@@ -349,7 +348,6 @@ def backpatch(somelist, res):
 #                                                            #
 ##############################################################
 def lex():
-    
     global lineno,charno,infile
     while(True):
         character = infile.read(1)
