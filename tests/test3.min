@@ -4,7 +4,7 @@ program test3
 	function alex(){
 		declare a ;
 
-		function sim(){
+		procedure sim(){
 			declare c;
 			c := 3
 		}
@@ -14,7 +14,7 @@ program test3
 			a:= a +5000 ; 
 			b:= a +7000 ;
 			b:= a + 7;
-			call alex(in b)
+			b := alex(in b)
 	}
 	
 }

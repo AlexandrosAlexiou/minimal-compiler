@@ -129,7 +129,7 @@ class Token():
 
 class Quad():
 
-    # eg. 100: +,a,b,c
+    # eg. 100: +,a,b,c => c := a + b
     def __init__(self,label,op,var1,var2,res):
         self.__label = label    # eg. 100,101
         self.__op = op          # +,-,*,/
@@ -189,8 +189,8 @@ class Quad():
 #                  Global declarations                       #
 #                                                            #
 ##############################################################
-lineno              = -1 #Current line number
-charno              = -1 #Current Character number from the start of the line
+lineno              = 1 #Current line number
+charno              = 0 #Current Character number from the start of the line
 token               = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
 infile              = ''
 mainprogram_name    = ''
@@ -258,9 +258,7 @@ tokens = {
 ##############################################################
 # Open files.
 def open_files(input_file):
-    global infile,lineno,charno
-    lineno=1
-    charno=0
+    global infile
     infile = open(input_file,  'r', encoding='utf-8')
 
 
@@ -495,14 +493,14 @@ def program():
                 token = lex()
                 block(name)
                 if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
-                    error('Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
+                     error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
                 token=lex()
             else:
                 error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block start (\'{\') but found \'%s\' instead.' % token.get_tk_value())
         else:
            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected program name but found \'%s\' instead.' % token.get_tk_value())
     else:
-        error('Expected \'program\' keyword but found \'%s\' instead.' % token.get_tk_value())
+       error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \'program\' keyword but found \'%s\' instead.' % token.get_tk_value())
     
 
 def block(name):
@@ -674,15 +672,12 @@ def if_stat():
         if token.get_tk_type() == TokenType.THEN_TK:
             token = lex()
             backpatch(b_true, next_quad())
-            #print("ekana backpatch thn btrue")
             statements()
             if_list = make_list(next_quad())
             gen_quad('jump')
             backpatch(b_false, next_quad())
-            #print("ekana backpatch thn bfalse")
             elsepart()
             backpatch(if_list, next_quad())
-            #print("ekana backpatch thn iflist")
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead' % token.get_tk_value())
     else:
