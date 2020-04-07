@@ -196,8 +196,8 @@ infile              = ''
 mainprogram_name    = ''
 quad_code           = list() # The main program equivalent in quadruples.
 nextlabel           = 0 
-tmpvars             = dict() # A dictionary holding temporary variable names used in intermediate code generation.
-next_tmpvar         = 1      # Used to implement the naming convention of temporary variables.
+tmpvars             = dict() # Temporary variable names used in intermediate code generation.
+next_tmpvar         = 1      # Used to implement the naming convention of temporary variables. eg. T_1 ... T_2 etc.
 halt_label          = -1
 
 #Dictionary to store bound words and token values
@@ -253,7 +253,7 @@ tokens = {
 
 ##############################################################
 #                                                            #
-#             Files related definitions                      #
+#                  Open/Close I/O files                      #
 #                                                            #
 ##############################################################
 # Open files.
@@ -269,7 +269,7 @@ def close_files():
 
 ##############################################################
 #                                                            #
-#          Error printing related definitions                #
+#                   Error printing                           #
 #                                                            #
 ##############################################################
 def error_line_message(lineno, charno, *args):
@@ -293,52 +293,6 @@ def error(*args):
     print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
     sys.exit(1)
 
-
-##############################################################
-#                                                            #
-#               Intermediate code functions                  #
-#                                                            #
-##############################################################
-def next_quad():
-    return nextlabel
-
-
-def gen_quad(op=None, arg1='_', arg2='_', res='_'):
-    global nextlabel
-    label = nextlabel
-    nextlabel += 1
-    newquad  = Quad(label, op, arg1, arg2, res)
-    quad_code.append(newquad)
-
-
-def new_temp():
-    global tmpvars, next_tmpvar
-    key = 'T_'+str(next_tmpvar)
-    tmpvars[key] = None
-    next_tmpvar += 1
-    return key
-
-
-def empty_list():
-    return list()
-
-
-def make_list(label):
-    newlist = list()
-    newlist.append(label)
-    return newlist
-
-
-def merge(list1, list2):
-    return list1 + list2
-
-
-def backpatch(somelist, res):
-    global quad_code
-    for quad in quad_code:
-        if quad.get_label() in somelist:
-            quad.set_res(res)
-            #print(res)
             
 ##############################################################
 #                                                            #
@@ -475,6 +429,53 @@ def lex():
             return Token(TokenType.EOF_TK,'EOF',lineno,0)
         else:
             error_line_message(lineno,charno,'Invalid character.')
+
+
+##############################################################
+#                                                            #
+#               Intermediate code functions                  #
+#                                                            #
+##############################################################
+def next_quad():
+    return nextlabel
+
+
+def gen_quad(op=None, arg1='_', arg2='_', res='_'):
+    global nextlabel
+    label = nextlabel
+    nextlabel += 1
+    newquad  = Quad(label, op, arg1, arg2, res)
+    quad_code.append(newquad)
+
+
+def new_temp():
+    global tmpvars, next_tmpvar
+    key = 'T_'+str(next_tmpvar)
+    tmpvars[key] = None
+    next_tmpvar += 1
+    return key
+
+
+def empty_list():
+    return list()
+
+
+def make_list(label):
+    newlist = list()
+    newlist.append(label)
+    return newlist
+
+
+def merge(list1, list2):
+    return list1 + list2
+
+
+def backpatch(somelist, res):
+    global quad_code
+    for quad in quad_code:
+        if quad.get_label() in somelist:
+            quad.set_res(res)
+            #print(res)
 
 
 ##############################################################
