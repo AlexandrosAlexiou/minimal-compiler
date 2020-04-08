@@ -1,0 +1,21 @@
+program test4
+{   
+    declare c;
+    {
+        a := 5;
+        a := 6;
+        a := 7;
+
+        forcase
+            when ( 6 > 6) : a :=  8
+            when ( 100 > 100) : b :=  9
+            when ( 200 > 200) : a :=  10
+            when ( 300 > 300) : b :=  11
+            default:    a := 5000;
+
+            
+        a := 1000
+    }
+}
+
+

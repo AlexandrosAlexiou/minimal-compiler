@@ -290,7 +290,7 @@ def error_file_not_found():
 
 
 def error(*args):
-    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
+    print('[' + ShellColors.RED + 'FATAL ERROR' + ShellColors.END + ']', *args)
     sys.exit(1)
 
             
@@ -732,16 +732,23 @@ def loop_stat():
 
 def forcase_stat():
     global token
+    s_quad = next_quad()
+    #exit_list = empty_list()
     while token.get_tk_type()== TokenType.WHEN_TK:
         token = lex()
         if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
             token = lex()
-            condition()
+            (b_true, b_false) = condition()
             if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
                 token = lex()
                 if token.get_tk_type()== TokenType.COLON_TK:
                     token = lex()
+                    backpatch(b_true, next_quad())
                     statements()
+                    #tmp_list = make_list(next_quad())
+                    gen_quad('jump','_','_',s_quad)
+                    #exit_list =merge(exit_list,tmp_list)
+                    backpatch(b_false, next_quad())
                 else:
                     error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead'% token.get_tk_value())
             else:
@@ -753,6 +760,7 @@ def forcase_stat():
         if token.get_tk_type()== TokenType.COLON_TK:
             token = lex()
             statements()
+            #backpatch(exit_list, next_quad())
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' after \'default\' but found \'%s\' instead'% token.get_tk_value()) 
         

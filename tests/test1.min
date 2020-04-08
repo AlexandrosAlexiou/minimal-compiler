@@ -3,8 +3,7 @@ program test1
 	declare k;
 
 	{
-		a := 30 + 1;
-		if(5>4) then 
+		if(3<5 or 5>4) then 
 			a:=3 
 		else 
 			a:=4;
