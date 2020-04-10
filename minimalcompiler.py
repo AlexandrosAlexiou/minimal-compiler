@@ -836,7 +836,7 @@ def input_stat():
 
 def condition():
     global token
-    (b_true,b_false) = (b1_true, b1_false) = boolterm()
+    (b_true,b_false)= boolterm()
     while token.get_tk_type() == TokenType.OR_TK:
         backpatch(b_false, next_quad())
         token = lex()
@@ -848,7 +848,7 @@ def condition():
 
 def boolterm():
     global token
-    (q_true, q_false) = (r1_true, r1_false) = boolfactor()
+    (q_true, q_false) = boolfactor()
     while token.get_tk_type() == TokenType.AND_TK:
         backpatch(q_true, next_quad())
         token = lex()
