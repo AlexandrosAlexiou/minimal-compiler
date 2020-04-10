@@ -192,12 +192,12 @@ class Quad():
 lineno              = 1 #Current line number
 charno              = 0 #Current Character number from the start of the line
 token               = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
-infile              = ''
-mainprogram_name    = ''
-quad_code           = list() # The main program equivalent in quadruples.
-nextlabel           = 0 
+infile              = '' # input file pointer
+mainprogram_name    = '' # main program name to generate halt quad
+quad_code           = list() # Program equivalent in quadruples.
+nextlabel           = 0  # next quad label that is going to be created
 tmpvars             = dict() # Temporary variable names used in intermediate code generation.
-next_tmpvar         = 1      # Used to implement the naming convention of temporary variables. eg. T_1 ... T_2 etc.
+next_tmpvar         = 1      # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label          = -1
 
 #Dictionary to store bound words and token values
@@ -440,11 +440,11 @@ def next_quad():
     return nextlabel
 
 
-def gen_quad(op=None, arg1='_', arg2='_', res='_'):
+def gen_quad(op=None, var1='_', var2='_', res='_'):
     global nextlabel
     label = nextlabel
     nextlabel += 1
-    newquad  = Quad(label, op, arg1, arg2, res)
+    newquad  = Quad(label, op, var1, var2, res)
     quad_code.append(newquad)
 
 
@@ -475,7 +475,6 @@ def backpatch(somelist, res):
     for quad in quad_code:
         if quad.get_label() in somelist:
             quad.set_res(res)
-            #print(res)
 
 
 ##############################################################
@@ -956,6 +955,7 @@ def factor():
             function_return = new_temp()
             gen_quad('par', function_return, 'RET')
             gen_quad('call', ret)
+            ret = function_return
     else: 
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead' % token.get_tk_value())
     return ret
