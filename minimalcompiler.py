@@ -180,8 +180,11 @@ class Quad():
 
     # Tostring for debugging purposes
     def __str__(self):
-        return '(' + str(self.__label) + ': ' + str(self.__op)+ ', ' + \
-            str(self.__var1) + ', ' + str(self.__var2) + ', ' + str(self.__res) + ')'
+        return '(' + str(self.__label) + ': ' + str(self.__op)+ ', ' + str(self.__var1) + ', ' + str(self.__var2) + ', ' + str(self.__res) + ')'
+
+
+    def quad_to_file(self):
+        return str(self.__label) + ': ' + str(self.__op)+ ', ' + str(self.__var1) + ', ' + str(self.__var2) + ', ' + str(self.__res) + '\n'
 
 
 ##############################################################
@@ -193,6 +196,7 @@ lineno              = 1 #Current line number
 charno              = 0 #Current Character number from the start of the line
 token               = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
 infile              = '' # input file pointer
+int_file            = '' # intermediate code file
 mainprogram_name    = '' # main program name to generate halt quad
 quad_code           = list() # Program equivalent in quadruples.
 nextlabel           = 0  # next quad label that is going to be created
@@ -257,16 +261,25 @@ tokens = {
 #                                                            #
 ##############################################################
 # Open files.
-def open_files(input_file):
-    global infile
-    infile = open(input_file,  'r', encoding='utf-8')
+def open_files(input_filename,intermediate_filename):
+    global infile,int_file
+    infile = open(input_filename,  'r', encoding='utf-8')
+    int_file= open(intermediate_filename,  'w', encoding='utf-8')
 
 
 # Close files.
 def close_files():
-    global infile
+    global infile,int_file
     infile.close()
+    int_file.close()
 
+
+# Generate a file containing the intermediate code
+def generate_int_code_file():
+    for quad in quad_code:
+        int_file.write(quad.quad_to_file())
+
+        
 ##############################################################
 #                                                            #
 #                   Error printing                           #
@@ -1024,37 +1037,31 @@ def actualparitem():
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected parameter type in or inout but found \'%s\' instead' % token.get_tk_value())
 
 
+
+
+def parser():
+    global token
+    #Begin syntax analysis
+    token = lex()
+    program()
+    if token.get_tk_type() != TokenType.EOF_TK:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),
+            'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
+    generate_int_code_file()
+    # print quad equivalent code
+    for Quad in quad_code:
+        print(Quad)
+
 ##############################################################
 #                                                            #
 #                   main compiler program                    #
 #                                                            #
 ##############################################################
-def main(argv):
-    open_files(argv)
-    global token
-    token = lex()
-    #Begin syntax analysis
-    program()
-    if token.get_tk_type() != TokenType.EOF_TK:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),
-            'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
-    # print quad equivalent code
-    for Quad in quad_code:
-        print(Quad)
-            
-    # This is for lex debugging
-    '''while True:
-        token=lex()
-        print(token)
-        print('\n')
-        if token.get_tk_type()==TokenType.EOF_TK:
-            break'''
-    '''while True:
-        character = infile.read(1)
-        print(character)
-        print('\n')
-        if character=='':
-            break'''
+def main(input_filename):
+    interm_filepath = input_filename[:-4] + '.int'
+    c_equivalent_filepath = input_filename[:-4] + '.c'
+    open_files(input_filename,interm_filepath)
+    parser()
     close_files()
 
 
