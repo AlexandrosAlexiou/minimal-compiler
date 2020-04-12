@@ -10,10 +10,10 @@ import string
 
 # For Error and warning printing
 class ShellColors:
-    GREEN  = '\033[92m'
-    RED    = '\033[91m'
-    END    = '\033[0m'
-    BOLD   = '\033[1m'
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    END = '\033[0m'
+    BOLD = '\033[1m'
 
 
 # Token ids
@@ -80,7 +80,7 @@ class TokenType():
 
 # Lexical analyzer return values to the syntax analyzer
 class Token():
-    def __init__(self,tk_type,tk_value,tk_lineno,tk_charno):
+    def __init__(self, tk_type = None, tk_value = None, tk_lineno = None, tk_charno = None):
         self.__tk_type = tk_type    # token type
         self.__tk_value = tk_value  # token string value
         self.__tk_lineno= tk_lineno # token line number
@@ -189,6 +189,9 @@ class Scope():
         return self.__nesting_level
 
     def get_current_offset(self):
+        return self.__current_offset
+
+    def get_current_offset_and_advance(self):
         current = self.__current_offset
         self.__current_offset += 4  # this is the next offset
         return current
@@ -247,7 +250,7 @@ class Entity():
 class Variable(Entity):
     def __init__(self, name, offset):
         super().__init__(name, 'Variable')
-        self.__offset = __offset
+        self.__offset = offset
 
     def get_offset(self):
         return self.__offset
@@ -282,7 +285,7 @@ class Function(Entity):
     def get_framelength(self):
         return self.__framelength
 
-    def set_framelen(self, framelength):
+    def set_framelength(self, framelength):
         self.__framelength = framelength
 
     # tostring for debugging purposes
@@ -336,7 +339,7 @@ class TemporaryVariable(Entity):
 ##############################################################
 lineno = 1 #Current line number
 charno = 0 #Current Character number from the start of the line
-token = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
+token = Token() #Each token returned from the lexical analyzer will be stored here
 infile = '' # input file pointer
 intfile = '' # intermediate code file
 mainprogram_name = '' # main program name to generate halt quad
@@ -631,10 +634,53 @@ def backpatch(label_list, z):
         if quad.get_label() in label_list:
             quad.set_z(z)
 
+##############################################################
+#                                                            #
+#                   Symbol table functions                   #
+#                                                            #
+##############################################################
+def add_new_scope():
+    if not scopes: # if scopes list is empty then add the main scope
+        current_scope = Scope()
+        scopes.append(current_scope)
+        return
+    previous_scope = scopes[-1]
+    current_scope = Scope(previous_scope.get_nesting_level() + 1, previous_scope)
+    scopes.append(current_scope)
+
+def add_function_entity(name):
+    scopes[-2].add_Entity(Function(name))
+
+def update_function_startQuad(name):
+    startQuad = nextquad()
+    '''if name == mainprogram_name:
+        return startQuad'''
+    scopes[-2].get_entities_list()[-1].set_start_quad(startQuad)
+    return startQuad
+
+def update_function_framelength(framelength):
+    scopes[-2].get_entities_list()[-1].set_framelength(framelength)
+
+def add_parameter_entity(name, parMode):
+    parameter_offset = scopes[-1].get_current_offset_and_advance()
+    scopes[-1].add_Entity(Parameter(name, parMode, parameter_offset))
+
+def add_function_argument(parMode):
+    if parMode == 'in':
+        new_argument = Argument('CV')
+    else:
+        new_argument = Argument('REF')
+    scopes[-2].get_entities_list()[-1].add_argument_in_list(new_argument)
+    if not scopes[-2].get_entities_list()[-1].get_arguments_list():
+        scopes[-2].get_entities_list()[-1].get_arguments_list()[-2].set_nextArgument(new_argument)
+
+def add_variable_entity(name):
+    variable_offset = scopes[-1].get_current_offset_and_advance()
+    scopes[-1].add_Entity(Variable(name, variable_offset))
 
 ##############################################################
 #                                                            #
-#           Syntax analyzer related functions                #
+#                  Syntax analyzer functions                 #
 #                                                            #
 ##############################################################
 def program():
@@ -645,6 +691,7 @@ def program():
             mainprogram_name = name = token.get_tk_value()
             token = lex()
             if token.get_tk_type() is TokenType.LEFT_BRACE_TK:
+                add_new_scope()
                 token = lex()
                 block(name)
                 if token.get_tk_type() is not TokenType.RIGHT_BRACE_TK:
@@ -659,14 +706,19 @@ def program():
     
 
 def block(name):
+    global scopes
     declarations()
     subprograms()
     genquad('begin_block', name)
-    statements() 
+    if name is not mainprogram_name:
+        update_function_startQuad(name)
+    statements()
     if name is mainprogram_name:
         halt_label = nextquad()
         genquad('halt')
     genquad('end_block', name)
+    if name is not mainprogram_name:
+        update_function_framelength(scopes[-1].get_current_offset())
 
 
 def declarations():
@@ -682,11 +734,13 @@ def declarations():
 def varlist():
     global token
     if token.get_tk_type() is TokenType.ID_TK:
+        add_variable_entity(token.get_tk_value())
         token = lex()
         while token.get_tk_type() is TokenType.COMMA_TK:
             token = lex()
             if token.get_tk_type() is not TokenType.ID_TK:
                error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected variable declaration but found \'%s\' instead' % token.get_tk_value())
+            add_variable_entity(token.get_tk_value())
             token = lex()
 
 
@@ -694,9 +748,11 @@ def subprograms():
     global token
     while token.get_tk_type() is TokenType.FUNCTION_TK or token.get_tk_type() is TokenType.PROCEDURE_TK:
         token = lex()
+        add_new_scope()
         if token.get_tk_type() is TokenType.ID_TK:
             name = token.get_tk_value()
             token = lex()
+            add_function_entity(name)
             funcbody(name)
         else:
              error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram name but found \'%s\' instead.' % token.get_tk_value())
@@ -740,9 +796,13 @@ def formalparlist(func_name):
 def formalparitem(func_name):
     global token
     if token.get_tk_type() is TokenType.IN_TK or token.get_tk_type() is TokenType.INOUT_TK:
+        parMode = token.get_tk_value()
         token = lex()
         if token.get_tk_type() is not TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter name but found \'%s\' instead'% token.get_tk_value()) 
+        parameter_name = token.get_tk_value()
+        add_function_argument(parMode)
+        add_parameter_entity(parameter_name, parMode)
         token = lex()
 
 
@@ -1179,7 +1239,7 @@ def actualparitem():
 
 ##############################################################
 #                                                            #
-#                   main compiler program                    #
+#                   main driver program                      #
 #                                                            #
 ##############################################################
 def main(input_filename):
