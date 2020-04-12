@@ -13,8 +13,8 @@ program test4
             when ( 300 > 300) : b :=  11
             default:    a := 5000;
 
-            
-        a := 1000
+        a := 1000;
+        a:= b
     }
 }
 

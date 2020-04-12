@@ -3,7 +3,7 @@ program test1
 	declare k;
 
 	{
-		if(3<5 or 5>4) then 
+		if(-3<5 or 5>4) then 
 			a:=3 
 		else 
 			a:=4;
@@ -14,7 +14,7 @@ program test1
 			a := 555;
 
 		while(5>3) 
-			a := a-3 ;
+			a := a-3;
 
 		while(1000>30) 
 			a := a-100

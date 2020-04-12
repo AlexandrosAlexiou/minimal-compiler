@@ -2,7 +2,6 @@
 import sys
 import os
 import string
-from enum import Enum
 ##############################################################
 #                                                            #
 #                     Class definitions                      #
@@ -18,7 +17,7 @@ class ShellColors:
 
 
 # Token ids
-class TokenType(Enum):
+class TokenType():
     ID_TK = 0
     NUMBER_TK = 1
     # Arithmetic Operators
@@ -81,8 +80,6 @@ class TokenType(Enum):
 
 # Lexical analyzer return values to the syntax analyzer
 class Token():
-
-
     def __init__(self,tk_type,tk_value,tk_lineno,tk_charno):
         self.__tk_type = tk_type    # token type
         self.__tk_value = tk_value  # token string value
@@ -128,82 +125,227 @@ class Token():
 
 
 class Quad():
-
-    # eg. 100: +,a,b,c => c := a + b
-    def __init__(self,label,op,var1,var2,res):
+    # eg. 100: -,a,b,c => c := a - b
+    def __init__(self, label, op, x, y, z):
         self.__label = label    # eg. 100,101
         self.__op = op          # +,-,*,/
-        self.__var1= var1       # variable name or constant
-        self.__var2= var2       # variable name or constant
-        self.__res= res         # variable name
+        self.__x= x       # variable name or constant
+        self.__y= y       # variable name or constant
+        self.__z= z         # variable name
     
-
     def get_label(self):
         return self.__label
     
-
     def set_label(self, label):
-        self.__label=label
-
+        self.__label = label
 
     def get_op(self):
         return self.__op
 
-
     def set_op(self, op):
-        self.__op=op
+        self.__op = op
     
+    def get_x(self):
+        return self.__x
 
-    def get_var1(self):
-        return self.__var1
+    def set_x(self, x):
+        self.__x = x
 
+    def get_y(self):
+        return self.__y
 
-    def set_var1(self, var1):
-        self.__var1=var1
-
-
-    def get_var2(self):
-        return self.__var2
-
-
-    def set_var2(self, var2):
-        self.__var2=var2
+    def set_y(self, y):
+        self.__y = y
     
+    def get_z(self):
+        return self.__z
 
-    def get_res(self):
-        return self.__res
+    def set_z(self, z):
+        self.__z=z
 
-
-    def set_res(self, res):
-        self.__res=res
-
-
-    # Tostring for debugging purposes
+    # tostring for debugging purposes
     def __str__(self):
-        return '(' + str(self.__label) + ': ' + str(self.__op)+ ', ' + str(self.__var1) + ', ' + str(self.__var2) + ', ' + str(self.__res) + ')'
+        return '(' + str(self.__label) + ': ' + str(self.__op)+ ', ' + str(self.__x) + ', ' + str(self.__y) + ', ' + str(self.__z) + ')'
 
-
+    # tostring for intermediate code file generation
     def quad_to_file(self):
-        return str(self.__label) + ': ' + str(self.__op)+ ', ' + str(self.__var1) + ', ' + str(self.__var2) + ', ' + str(self.__res) + '\n'
+        return str(self.__label) + ': ' + str(self.__op)+ ', ' + str(self.__x) + ', ' + str(self.__y) + ', ' + str(self.__z) + '\n'
+
+
+class Scope():
+    def __init__(self, nestingLevel = 0, previous_scope = None):
+        self.__entities_list = list()
+        self.__nesting_level = nestingLevel
+        self.__current_offset = 12
+        self.__previous_scope = previous_scope
+
+    def get_entities_list(self):
+        return self.__entities_list
+
+    def add_Entity(self, Entity):
+        self.__entities_list.append(Entity)
+
+    def get_nesting_level(self):
+        return self.__nesting_level
+
+    def get_current_offset(self):
+        current = self.__current_offset
+        self.__current_offset += 4  # this is the next offset
+        return current
+
+    def get_previous_scope(self):
+        return self.__previous_scope
+
+    # tostring for debugging purposes
+    def __str__(self):
+        return '( ' + str(self.__nesting_level) + ', ' + self.__previous_scope.__str__() + ' )'
+
+
+class  Argument():
+    def __init__(self, parMode, nextArgument):
+        self.__parMode = parMode
+        self.__nextArgument = nextArgument
+    
+    def get_parMode(self):
+        return self.__parMode
+
+    def set_parMode(self, parMode):
+        self.__parMode = parMode
+
+    def get_nextArgument(self):
+        return self.__nextArgument
+
+    def set_nextArgument(self, nextArgument):
+        self.__nextArgument = nextArgument
+    
+    # tostring for debugging purposes
+    def __str__(self):
+        return '( ' + self.__parMode + ', ' + self.__nextArgument.__str__() + ' )'
+
+
+class Entity():
+    # Entity type can be Variable or Function or Parameter or TemporaryVariable 
+    def __init__(self, name, entityType): 
+        self.__name = name
+        self.__entityType = entityType
+        self.__nextEntity = None
+
+    def get_name(self):
+        return self.__name
+
+    def get_entityType(self):
+        return self.__entityType
+
+    def get_nextEntity(self):
+        return self.__nextEntity
+
+    # tostring for debugging purposes
+    def __str__(self):
+        return  '( ' + ' Entity name: ' + self.__name + ',EntityType: ' + self.__entityType + ' )'
+
+
+class Variable(Entity):
+    def __init__(self, name, offset):
+        super().__init__(name, 'Variable')
+        self.__offset = __offset
+
+    def get_offset(self):
+        return self.__offset
+
+    def set_offset(self, offset):
+        self.__offset = offset
+
+    # tostring for debugging purposes
+    def __str__(self):
+        return super().__str__() + '( ' +'Variable offset: ' + str(self.__offset) + ' )'
+
+
+class Function(Entity):
+    def __init__(self, name, startQuad=-1):
+        super().__init__(name, 'Function')
+        self.__startQuad = startQuad
+        self.__arguments_list = list()
+        self.__framelength =  -1
+
+    def get_startQuad(self):
+        return self.__startQuad
+    
+    def set_start_quad(self, start_quad):
+        self.start_quad = start_quad
+
+    def get_arguments_list(self):
+        return self.__arguments_list
+
+    def add_argument_in_list(self, argument):
+        self.__arguments_list.append(argument)
+
+    def get_framelength(self):
+        return self.__framelength
+
+    def set_framelen(self, framelength):
+        self.__framelength = framelength
+
+    # tostring for debugging purposes
+    def __str__(self):
+        return super().__str__() + '( startQuad: ' + str(self.__startQuad) + ', framelen: ' + str(self.__framelength) + ' )'
+
+
+class Parameter(Entity):
+    def __init__(self, name, parMode, offset = -1):
+        super().__init__(name, 'Parameter')
+        self.__parMode = parMode
+        self.__offset = offset
+
+    def get_parMode(self):
+        return self.__parMode
+
+    def set_parMode(self, parMode):
+        self.__parMode = parMode
+
+    def get_offset(self):
+        return self.__offset
+    
+    def set_offset(self, offset):
+        self.__offset = offset
+    
+    # tostring for debugging purposes
+    def __str__(self):
+        return super().__str__() + '( Parameter mode: ' + self.__parMode + ', offset: ' + str(self.__offset) + ' )'
+
+
+class TemporaryVariable(Entity):
+    def __init__(self, name, offset = -1):
+        super().__init__(name, 'Tempvar')
+        self.__offset = offset
+
+    def get_offset(self):
+        return self.__offset
+
+    def set_offset(self, offset):
+        self.__offset = offset
+
+    # tostring for debugging purposes
+    def __str__(self):
+        return super().__str__() + '(Temporary Variable offset: ' + str(self.__offset) + ')'
 
 
 ##############################################################
 #                                                            #
-#                  Global declarations                       #
+#                     Global variables                       #
 #                                                            #
 ##############################################################
-lineno              = 1 #Current line number
-charno              = 0 #Current Character number from the start of the line
-token               = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
-infile              = '' # input file pointer
-int_file            = '' # intermediate code file
-mainprogram_name    = '' # main program name to generate halt quad
-quad_code           = list() # Program equivalent in quadruples.
-nextlabel           = 0  # next quad label that is going to be created
-tmpvars             = dict() # Temporary variable names used in intermediate code generation.
-next_tmpvar         = 1      # Temporary variables. eg. T_1 ... T_2 etc.
-halt_label          = -1
-
+lineno = 1 #Current line number
+charno = 0 #Current Character number from the start of the line
+token = Token(None,None,None,None) #Each token returned from the lexical analyzer will be stored here
+infile = '' # input file pointer
+intfile = '' # intermediate code file
+mainprogram_name = '' # main program name to generate halt quad
+quads_list= list() # Program equivalent in quadruples.
+scopes = list() # Program current scopes
+nextlabel = 0  # next quad label that is going to be created
+tmpvars = dict() # Temporary variable names used in intermediate code generation.
+next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
+halt_label = -1
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -261,23 +403,23 @@ tokens = {
 #                                                            #
 ##############################################################
 # Open files.
-def open_files(input_filename,intermediate_filename):
-    global infile,int_file
+def open_files(input_filename,intermediate_code_filename):
+    global infile,intfile
     infile = open(input_filename,  'r', encoding='utf-8')
-    int_file= open(intermediate_filename,  'w', encoding='utf-8')
+    intfile= open(intermediate_code_filename,  'w', encoding='utf-8')
 
 
 # Close files.
 def close_files():
-    global infile,int_file
+    global infile,intfile
     infile.close()
-    int_file.close()
+    intfile.close()
 
 
 # Generate a file containing the intermediate code
-def generate_int_code_file():
-    for quad in quad_code:
-        int_file.write(quad.quad_to_file())
+def generate_intermediate_code_file():
+    for quad in quads_list:
+        intfile.write(quad.quad_to_file())
 
         
 ##############################################################
@@ -287,18 +429,18 @@ def generate_int_code_file():
 ##############################################################
 def error_line_message(lineno, charno, *args):
     print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', ShellColors.BOLD + '%s:%d:%d:' %(infile.name, lineno, charno) + ShellColors.END, *args)
-    # character pointer
+    # character pointer reset
     infile.seek(0)
     for i, line in enumerate(infile):
         if i == lineno-1:
-            print(line.replace('\t', ' ').replace('\n', ' '))
-            print(ShellColors.GREEN + ' ' * (charno-1) + '^' + ShellColors.END)
+            print(line.replace('\t', ' ').replace('\n', ' ')) # \t and \n count as 1 character
+            print(ShellColors.GREEN + ' ' * charno + '^' + ShellColors.END)
     close_files()
     sys.exit(1)
 
 
-def error_file_not_found():
-    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']'+ ' File:'+ShellColors.GREEN +' '+ sys.argv[1] + ' '+ShellColors.END+'not found.')
+def error_file_not_found(infile):
+    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']'+ ' File:'+ShellColors.GREEN +' '+ infile + ' '+ShellColors.END+'does not exist.')
     sys.exit(1)
 
 
@@ -361,7 +503,7 @@ def lex():
         elif character is '*':
             character =infile.read(1)
             charno+=1
-            if character == '/':
+            if character is '/':
                 error_line_message(lineno,charno,'Expected "/*" to open comments before "*/" .')
             else :
                 infile.seek(infile.tell() - 1)
@@ -449,19 +591,19 @@ def lex():
 #               Intermediate code functions                  #
 #                                                            #
 ##############################################################
-def next_quad():
+def nextquad():
     return nextlabel
 
 
-def gen_quad(op=None, var1='_', var2='_', res='_'):
+def genquad(op=None, x = '_', y = '_', z = '_'):
     global nextlabel
     label = nextlabel
     nextlabel += 1
-    newquad  = Quad(label, op, var1, var2, res)
-    quad_code.append(newquad)
+    newquad  = Quad(label, op, x, y, z)
+    quads_list.append(newquad)
 
 
-def new_temp():
+def newtemp():
     global tmpvars, next_tmpvar
     key = 'T_'+str(next_tmpvar)
     tmpvars[key] = None
@@ -469,25 +611,25 @@ def new_temp():
     return key
 
 
-def empty_list():
+def emptylist():
     return list()
 
 
-def make_list(label):
-    newlist = list()
-    newlist.append(label)
-    return newlist
+def makelist(label):
+    new_list = list()
+    new_list.append(label)
+    return new_list
 
 
 def merge(list1, list2):
     return list1 + list2
 
 
-def backpatch(somelist, res):
-    global quad_code
-    for quad in quad_code:
-        if quad.get_label() in somelist:
-            quad.set_res(res)
+def backpatch(label_list, z):
+    global quads_list
+    for quad in quads_list:
+        if quad.get_label() in label_list:
+            quad.set_z(z)
 
 
 ##############################################################
@@ -497,15 +639,15 @@ def backpatch(somelist, res):
 ##############################################################
 def program():
     global token, lineno, charno,  mainprogram_name
-    if token.get_tk_type() == TokenType.PROGRAM_TK:
+    if token.get_tk_type() is TokenType.PROGRAM_TK:
         token = lex()
-        if token.get_tk_type() == TokenType.ID_TK:
+        if token.get_tk_type() is TokenType.ID_TK:
             mainprogram_name = name = token.get_tk_value()
             token = lex()
-            if token.get_tk_type()== TokenType.LEFT_BRACE_TK:
+            if token.get_tk_type() is TokenType.LEFT_BRACE_TK:
                 token = lex()
                 block(name)
-                if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
+                if token.get_tk_type() is not TokenType.RIGHT_BRACE_TK:
                      error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
                 token=lex()
             else:
@@ -519,40 +661,40 @@ def program():
 def block(name):
     declarations()
     subprograms()
-    gen_quad('begin_block', name)
+    genquad('begin_block', name)
     statements() 
-    if name == mainprogram_name:
-        halt_label = next_quad()
-        gen_quad('halt')
-    gen_quad('end_block', name)
+    if name is mainprogram_name:
+        halt_label = nextquad()
+        genquad('halt')
+    genquad('end_block', name)
 
 
 def declarations():
     global token
-    while token.get_tk_type()== TokenType.DECLARE_TK:
+    while token.get_tk_type() is TokenType.DECLARE_TK:
         token = lex()
         varlist() 
-        if token.get_tk_type() != TokenType.SEMICOLON_TK:
+        if token.get_tk_type() is not TokenType.SEMICOLON_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \';\' but found \'%s\' instead' % token.get_tk_value())
         token = lex()
 
 
 def varlist():
     global token
-    if token.get_tk_type() == TokenType.ID_TK:
+    if token.get_tk_type() is TokenType.ID_TK:
         token = lex()
-        while token.get_tk_type() == TokenType.COMMA_TK:
+        while token.get_tk_type() is TokenType.COMMA_TK:
             token = lex()
-            if token.get_tk_type() != TokenType.ID_TK:
+            if token.get_tk_type() is not TokenType.ID_TK:
                error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected variable declaration but found \'%s\' instead' % token.get_tk_value())
             token = lex()
 
 
 def subprograms():
     global token
-    while token.get_tk_type()==TokenType.FUNCTION_TK or token.get_tk_type()==TokenType.PROCEDURE_TK:
+    while token.get_tk_type() is TokenType.FUNCTION_TK or token.get_tk_type() is TokenType.PROCEDURE_TK:
         token = lex()
-        if token.get_tk_type()==TokenType.ID_TK:
+        if token.get_tk_type() is TokenType.ID_TK:
             name = token.get_tk_value()
             token = lex()
             funcbody(name)
@@ -563,10 +705,10 @@ def subprograms():
 def funcbody(name):
     global token
     formalpars(name)
-    if token.get_tk_type()==TokenType.LEFT_BRACE_TK:
+    if token.get_tk_type() is TokenType.LEFT_BRACE_TK:
         token = lex()
         block(name)
-        if token.get_tk_type() != TokenType.RIGHT_BRACE_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_BRACE_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected block end (\'}\') but found \'%s\' instead.' % token.get_tk_value())  
         token = lex()
     else:
@@ -575,10 +717,10 @@ def funcbody(name):
 
 def formalpars(func_name):
     global token
-    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
         formalparlist(func_name)
-        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token=lex()
     else:
@@ -588,31 +730,31 @@ def formalpars(func_name):
 def formalparlist(func_name):
     global token
     formalparitem(func_name)
-    while token.get_tk_type() == TokenType.COMMA_TK:
+    while token.get_tk_type() is TokenType.COMMA_TK:
         token = lex()
-        if token.get_tk_type() != TokenType.IN_TK and token.get_tk_type() != TokenType.INOUT_TK:
+        if token.get_tk_type() is not TokenType.IN_TK and token.get_tk_type() is not TokenType.INOUT_TK:
            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter declaration but found \'%s\' instead'% token.get_tk_value())
         formalparitem(func_name)
 
 
 def formalparitem(func_name):
     global token
-    if token.get_tk_type() == TokenType.IN_TK or token.get_tk_type() == TokenType.INOUT_TK:
+    if token.get_tk_type() is TokenType.IN_TK or token.get_tk_type() is TokenType.INOUT_TK:
         token = lex()
-        if token.get_tk_type() != TokenType.ID_TK:
+        if token.get_tk_type() is not TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter name but found \'%s\' instead'% token.get_tk_value()) 
         token = lex()
 
 
 def statements():
     global token
-    if token.get_tk_type() == TokenType.LEFT_BRACE_TK:
+    if token.get_tk_type() is TokenType.LEFT_BRACE_TK:
         token = lex()
         statement()
-        while token.get_tk_type() == TokenType.SEMICOLON_TK:
+        while token.get_tk_type() is TokenType.SEMICOLON_TK:
             token = lex()
             statement()
-        if token.get_tk_type()!= TokenType.RIGHT_BRACE_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_BRACE_TK:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected statements end (\'}\') but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
     else:
@@ -621,44 +763,44 @@ def statements():
 
 def statement():
     global token
-    if token.get_tk_type() == TokenType.ID_TK:
+    if token.get_tk_type() is TokenType.ID_TK:
         lhand = token.get_tk_value()
         token = lex()
         rhand = assignment_stat()
-        gen_quad(':=', rhand,'_', lhand)
-    elif token.get_tk_type() == TokenType.IF_TK:
+        genquad(':=', rhand,'_', lhand)
+    elif token.get_tk_type() is TokenType.IF_TK:
         token = lex()
         if_stat()
-    elif token.get_tk_type() == TokenType.WHILE_TK:
+    elif token.get_tk_type() is TokenType.WHILE_TK:
         token = lex()
         while_stat()
-    elif token.get_tk_type() == TokenType.DOUBLEWHILE_TK:
+    elif token.get_tk_type() is TokenType.DOUBLEWHILE_TK:
         token = lex()
         doublewhile_stat()
-    elif token.get_tk_type() == TokenType.LOOP_TK:
+    elif token.get_tk_type() is TokenType.LOOP_TK:
         token = lex()
         loop_stat()
-    elif token.get_tk_type() == TokenType.EXIT_TK:
-        exit_list = make_list(next_quad())
-        gen_quad('jump')
+    elif token.get_tk_type() is TokenType.EXIT_TK:
+        exit_list = makelist(nextquad())
+        genquad('jump')
         token = lex()
         #exit_stat() ???
-    elif token.get_tk_type() == TokenType.FORCASE_TK:
+    elif token.get_tk_type() is TokenType.FORCASE_TK:
         token = lex()
         forcase_stat()
-    elif token.get_tk_type() == TokenType.INCASE_TK:
+    elif token.get_tk_type() is TokenType.INCASE_TK:
         token = lex()
         incase_stat()
-    elif token.get_tk_type() == TokenType.RETURN_TK:
+    elif token.get_tk_type() is TokenType.RETURN_TK:
         token = lex()
         return_stat()
-    elif token.get_tk_type() == TokenType.CALL_TK:
+    elif token.get_tk_type() is TokenType.CALL_TK:
         token = lex()
         call_stat()
-    elif token.get_tk_type() == TokenType.PRINT_TK:
+    elif token.get_tk_type() is TokenType.PRINT_TK:
         token = lex()
         print_stat()
-    elif token.get_tk_type() == TokenType.INPUT_TK:
+    elif token.get_tk_type() is TokenType.INPUT_TK:
         token = lex()
         input_stat()
     else:
@@ -667,7 +809,7 @@ def statement():
 
 def assignment_stat():
     global token
-    if token.get_tk_type()==TokenType.ASSIGN_TK:
+    if token.get_tk_type() is TokenType.ASSIGN_TK:
         token=lex()
         return expression()
     else:
@@ -676,21 +818,21 @@ def assignment_stat():
 
 def if_stat():
     global token
-    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
         (b_true,b_false) = condition() 
-        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' after if condition but found \'%s\' instead' % token.get_tk_value())
         token = lex()
-        if token.get_tk_type() == TokenType.THEN_TK:
+        if token.get_tk_type() is TokenType.THEN_TK:
             token = lex()
-            backpatch(b_true, next_quad())
+            backpatch(b_true, nextquad())
             statements()
-            if_list = make_list(next_quad())
-            gen_quad('jump')
-            backpatch(b_false, next_quad())
+            if_list = makelist(nextquad())
+            genquad('jump')
+            backpatch(b_false, nextquad())
             elsepart()
-            backpatch(if_list, next_quad())
+            backpatch(if_list, nextquad())
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead' % token.get_tk_value())
     else:
@@ -699,38 +841,38 @@ def if_stat():
 
 def elsepart():
     global token
-    if token.get_tk_type() == TokenType.ELSE_TK:
+    if token.get_tk_type() is TokenType.ELSE_TK:
         token = lex()
         statements()
 
 
 def while_stat():
     global token
-    b_quad = next_quad()
-    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+    b_quad = nextquad()
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
         (b_true, b_false) = condition()
-        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
         token = lex()
-        backpatch(b_true, next_quad())
+        backpatch(b_true, nextquad())
         statements()
-        gen_quad('jump','_','_',b_quad)
-        backpatch(b_false, next_quad())
+        genquad('jump','_','_',b_quad)
+        backpatch(b_false, nextquad())
     else:
          error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'while\' but found \'%s\' instead'% token.get_tk_value())
 
 
 def doublewhile_stat():
     global token
-    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token =lex()
         condition()
-        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
         token = lex()
         statements()
-        if token.get_tk_type() != TokenType.ELSE_TK:
+        if token.get_tk_type() is not TokenType.ELSE_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'else\' inside doublewhile but found \'%s\' instead' % token.get_tk_type())
         token = lex()
         statements()
@@ -744,35 +886,35 @@ def loop_stat():
 
 def forcase_stat():
     global token
-    s_quad = next_quad()
-    #exit_list = empty_list()
-    while token.get_tk_type()== TokenType.WHEN_TK:
+    s_quad = nextquad()
+    #exit_list = emptylist()
+    while token.get_tk_type() is TokenType.WHEN_TK:
         token = lex()
-        if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
+        if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
             token = lex()
             (b_true, b_false) = condition()
-            if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
+            if token.get_tk_type() is TokenType.RIGHT_PARENTHESIS_TK:
                 token = lex()
-                if token.get_tk_type()== TokenType.COLON_TK:
+                if token.get_tk_type() is TokenType.COLON_TK:
                     token = lex()
-                    backpatch(b_true, next_quad())
+                    backpatch(b_true, nextquad())
                     statements()
-                    #tmp_list = make_list(next_quad())
-                    gen_quad('jump','_','_',s_quad)
+                    #tmp_list = makelist(nextquad())
+                    genquad('jump','_','_',s_quad)
                     #exit_list =merge(exit_list,tmp_list)
-                    backpatch(b_false, next_quad())
+                    backpatch(b_false, nextquad())
                 else:
                     error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead'% token.get_tk_value())
             else:
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
         else:
              error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
-    if token.get_tk_type()== TokenType.DEFAULT_TK:
+    if token.get_tk_type() is TokenType.DEFAULT_TK:
         token = lex()
-        if token.get_tk_type()== TokenType.COLON_TK:
+        if token.get_tk_type() is TokenType.COLON_TK:
             token = lex()
             statements()
-            #backpatch(exit_list, next_quad())
+            #backpatch(exit_list, nextquad())
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' after \'default\' but found \'%s\' instead'% token.get_tk_value()) 
         
@@ -782,14 +924,14 @@ def forcase_stat():
 
 def incase_stat():
     global token
-    while token.get_tk_type()== TokenType.WHEN_TK:
+    while token.get_tk_type() is TokenType.WHEN_TK:
         token = lex()
-        if token.get_tk_type()== TokenType.LEFT_PARENTHESIS_TK:
+        if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
             token = lex()
             condition()
-            if token.get_tk_type()== TokenType.RIGHT_PARENTHESIS_TK:
+            if token.get_tk_type() is TokenType.RIGHT_PARENTHESIS_TK:
                 token = lex()
-                if token.get_tk_type()== TokenType.COLON_TK:
+                if token.get_tk_type() is TokenType.COLON_TK:
                     token = lex()
                     statements()
                 else:
@@ -802,29 +944,28 @@ def incase_stat():
 
 def return_stat():
     global token
-    token = lex()
     exp = expression()
-    gen_quad('retv', exp)
+    genquad('retv', exp)
 
 
 def call_stat():
     global token
-    if token.get_tk_type() == TokenType.ID_TK:
-        subprog_id = token.get_tk_value()
+    if token.get_tk_type() is TokenType.ID_TK:
+        procedure_id = token.get_tk_value()
         token = lex()
         actualpars()
-        gen_quad('call',subprog_id)
+        genquad('call',procedure_id)
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected function or procedure id but found \'%s\' instead'% token.get_tk_value())
 
 
 def print_stat():
     global token
-    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
         exp = expression()
-        gen_quad('out',exp)
-        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+        genquad('out',exp)
+        if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
         token = lex()
     else:
@@ -833,14 +974,14 @@ def print_stat():
 
 def input_stat():
     global token
-    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        if token.get_tk_type() != TokenType.ID_TK:
+        if token.get_tk_type() is not TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead'% token.get_tk_value())
         id_name = token.get_tk_value()
-        gen_quad('inp',id_name)
+        genquad('inp',id_name)
         token = lex()
-        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+        if token.get_tk_type()  is not  TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
         token = lex()
     else:
@@ -850,8 +991,8 @@ def input_stat():
 def condition():
     global token
     (b_true,b_false)= boolterm()
-    while token.get_tk_type() == TokenType.OR_TK:
-        backpatch(b_false, next_quad())
+    while token.get_tk_type() is TokenType.OR_TK:
+        backpatch(b_false, nextquad())
         token = lex()
         (b2_true, b2_false) =boolterm()
         b_true = merge(b_true, b2_true)
@@ -862,8 +1003,8 @@ def condition():
 def boolterm():
     global token
     (q_true, q_false) = boolfactor()
-    while token.get_tk_type() == TokenType.AND_TK:
-        backpatch(q_true, next_quad())
+    while token.get_tk_type() is TokenType.AND_TK:
+        backpatch(q_true, nextquad())
         token = lex()
         (r2_true, r2_false) = boolfactor()
         q_false = merge (q_false, r2_false)
@@ -873,31 +1014,31 @@ def boolterm():
 
 def boolfactor():
     global token
-    if token.get_tk_type() == TokenType.NOT_TK:
+    if token.get_tk_type() is TokenType.NOT_TK:
         token = lex()
-        if token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
+        if token.get_tk_type() is TokenType.LEFT_BRACKET_TK:
             token = lex()
             ret = condition()
             ret = ret[::-1]
-            if token.get_tk_type() != TokenType.RIGHT_BRACKET_TK:
+            if token.get_tk_type()  is not  TokenType.RIGHT_BRACKET_TK:
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
             token = lex()
         else:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'[\' after \'not\' but found \'%s\' instead'% token.get_tk_value())
-    elif token.get_tk_type() == TokenType.LEFT_BRACKET_TK:
+    elif token.get_tk_type() is TokenType.LEFT_BRACKET_TK:
         token = lex()
         ret = condition()
-        if token.get_tk_type() != TokenType.RIGHT_BRACKET_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_BRACKET_TK:
                 error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
         token = lex()
     else:
         exp1 = expression()
         op   = relational_oper()
         exp2 = expression()
-        r_true = make_list(next_quad())
-        gen_quad(op , exp1, exp2)
-        r_false = make_list(next_quad())
-        gen_quad('jump')
+        r_true = makelist(nextquad())
+        genquad(op , exp1, exp2)
+        r_false = makelist(nextquad())
+        genquad('jump')
         ret = (r_true, r_false)
     return ret
 
@@ -905,9 +1046,9 @@ def boolfactor():
 def relational_oper():
     global token
     op = token.get_tk_value()
-    if token.get_tk_type() != TokenType.EQUAL_TK and token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and token.get_tk_type() != TokenType.LESS_TK and \
-        token.get_tk_type() != TokenType.GREATER_THAN_OR_EQUAL_TK and token.get_tk_type() != TokenType.GREATER_TK and token.get_tk_type() != TokenType.LESS_THAN_OR_EQUAL_TK and \
-        token.get_tk_type() != TokenType.NOT_EQUAL_TK:
+    if token.get_tk_type() is not TokenType.EQUAL_TK and token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and token.get_tk_type() is not TokenType.LESS_TK and \
+        token.get_tk_type() is not TokenType.GREATER_THAN_OR_EQUAL_TK and token.get_tk_type() is not TokenType.GREATER_TK and token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and \
+        token.get_tk_type() is not TokenType.NOT_EQUAL_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected relational operator but found \'%s\' instead'% token.get_tk_value())
     token = lex()
     return op
@@ -918,56 +1059,55 @@ def expression():
     op_sign = optional_sign()
     term_1 = term()
     if op_sign != None:
-        signtmp = new_temp()
-        gen_quad('-', 0, term_1, signtmp)
+        signtmp = newtemp()
+        genquad('-', 0, term_1, signtmp)
         term_1 = signtmp
-    while token.get_tk_type()==TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
+    while token.get_tk_type() is TokenType.PLUS_TK or token.get_tk_type() is TokenType.MINUS_TK :
         oper = add_oper()
         term_2   = term()
-        tmpvar   = new_temp()
-        gen_quad(oper, term_1, term_2, tmpvar)
+        tmpvar   = newtemp()
+        genquad(oper, term_1, term_2, tmpvar)
         term_1 = tmpvar
     return term_1
 
 
 def optional_sign():
     global token
-    if token.get_tk_type()== TokenType.PLUS_TK or token.get_tk_type()==TokenType.MINUS_TK :
+    if token.get_tk_type() is TokenType.PLUS_TK or token.get_tk_type() is TokenType.MINUS_TK :
         return add_oper()
 
 
 def term():
     global token 
     factor_1 = factor()
-    while token.get_tk_type()==TokenType.SLASH_TK or token.get_tk_type()==TokenType.TIMES_TK:
+    while token.get_tk_type() is TokenType.SLASH_TK or token.get_tk_type() is TokenType.TIMES_TK:
         m_oper = mul_oper()
         factor_2 = factor()
-        tmpvar   = new_temp()
-        gen_quad(m_oper, factor_1, factor_2, tmpvar)
+        tmpvar   = newtemp()
+        genquad(m_oper, factor_1, factor_2, tmpvar)
         factor_1 = tmpvar
     return factor_1
 
 
 def factor(): 
     global token
-    if token.get_tk_type() == TokenType.NUMBER_TK :
+    if token.get_tk_type() is TokenType.NUMBER_TK :
         ret = token.get_tk_value()
         token = lex()
-    elif token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
+    elif token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token=lex()
         ret = expression()
-        if token.get_tk_type()!=TokenType.RIGHT_PARENTHESIS_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
         token = lex()
-
-    elif token.get_tk_type()==TokenType.ID_TK:
+    elif token.get_tk_type() is TokenType.ID_TK:
         ret = token.get_tk_value()
         token=lex()
         tail = idtail()
-        if tail != None:
-            function_return = new_temp()
-            gen_quad('par', function_return, 'RET')
-            gen_quad('call', ret)
+        if tail is not None:
+            function_return = newtemp()
+            genquad('par', function_return, 'RET')
+            genquad('call', ret)
             ret = function_return
     else: 
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead' % token.get_tk_value())
@@ -976,14 +1116,14 @@ def factor():
 
 def idtail():
    global token
-   if token.get_tk_type()==TokenType.LEFT_PARENTHESIS_TK:
+   if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         return actualpars() 
 
 
 def add_oper():
     global token
     op = token.get_tk_value()
-    if token.get_tk_type()!= TokenType.PLUS_TK and token.get_tk_type()!= TokenType.MINUS_TK :
+    if token.get_tk_type() is not TokenType.PLUS_TK and token.get_tk_type() is not TokenType.MINUS_TK :
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'+\' or \'-\' but found \'%s\' instead' % token.get_tk_value())
     token=lex()
     return op
@@ -992,7 +1132,7 @@ def add_oper():
 def mul_oper():
     global token
     op = token.get_tk_value()
-    if token.get_tk_type() != TokenType.TIMES_TK and token.get_tk_type() != TokenType.SLASH_TK:
+    if token.get_tk_type() is not TokenType.TIMES_TK and token.get_tk_type() is not TokenType.SLASH_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'*\' or \'/\' but found \'%s\' instead' % token.get_tk_value())
     token = lex()
     return op
@@ -1000,10 +1140,10 @@ def mul_oper():
 
 def actualpars():
     global token
-    if token.get_tk_type() == TokenType.LEFT_PARENTHESIS_TK:
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
         actualparlist()
-        if token.get_tk_type() != TokenType.RIGHT_PARENTHESIS_TK:
+        if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
         token = lex()
         return True
@@ -1013,44 +1153,29 @@ def actualpars():
 
 def actualparlist():
     global token
-    if token.get_tk_type() == TokenType.IN_TK or token.get_tk_type() == TokenType.INOUT_TK:
+    if token.get_tk_type() is TokenType.IN_TK or token.get_tk_type() is TokenType.INOUT_TK:
         actualparitem()
-        while token.get_tk_type() == TokenType.COMMA_TK:
+        while token.get_tk_type() is TokenType.COMMA_TK:
             token = lex()
             actualparitem()
 
 
 def actualparitem():
     global token
-    if token.get_tk_type() == TokenType.IN_TK:
+    if token.get_tk_type() is TokenType.IN_TK:
         token = lex()
         exp = expression()
-        gen_quad('par', exp, 'CV')
-    elif token.get_tk_type() == TokenType.INOUT_TK:
+        genquad('par', exp, 'CV')
+    elif token.get_tk_type() is TokenType.INOUT_TK:
         token = lex()
         parameter_id = token.get_tk_value()
-        if token.get_tk_type() != TokenType.ID_TK:
+        if token.get_tk_type() is not TokenType.ID_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead' % token.get_tk_value())
         token = lex()
-        gen_quad('par', parameter_id, 'REF')
+        genquad('par', parameter_id, 'REF')
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected parameter type in or inout but found \'%s\' instead' % token.get_tk_value())
 
-
-
-
-def parser():
-    global token
-    #Begin syntax analysis
-    token = lex()
-    program()
-    if token.get_tk_type() != TokenType.EOF_TK:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),
-            'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
-    generate_int_code_file()
-    # print quad equivalent code
-    for Quad in quad_code:
-        print(Quad)
 
 ##############################################################
 #                                                            #
@@ -1058,23 +1183,35 @@ def parser():
 #                                                            #
 ##############################################################
 def main(input_filename):
+
     interm_filepath = input_filename[:-4] + '.int'
     c_equivalent_filepath = input_filename[:-4] + '.c'
     open_files(input_filename,interm_filepath)
-    parser()
+
+    global token
+    #Begin syntax analysis
+    token = lex()
+    program()
+    if token.get_tk_type() is not TokenType.EOF_TK:
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
+
+    generate_intermediate_code_file()
+    # print quad equivalent code
+    for Quad in quads_list:
+        print(Quad)
     close_files()
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
 
     # No arguments passed
-    if len(sys.argv)==1:
+    if len(sys.argv) == 1:
         error(':no input files.')
         sys.exit(1)
 
     # File does not exist
-    if os.path.exists(sys.argv[1])==False:
-        error_file_not_found()
+    if not os.path.exists(sys.argv[1]):
+        error_file_not_found(sys.argv[1])
         sys.exit(1)
 
     # Call main function

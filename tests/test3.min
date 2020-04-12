@@ -6,15 +6,20 @@ program test3
 
 		procedure sim(){
 			declare c;
-			c := 3
+			{
+				c := 3;
+				return c + id(in a)
+			}
 		}
-		a := 3
+		a := 5000
 	}
-    loop{
-			a:= a +5000 ; 
-			b:= a +7000 ;
-			b:= a + 7;
-			b := alex(in b)
+	procedure kappa(){
+		declare c;
+		{
+			c := 3;
+			return c + id(in a)
+		}
 	}
-	
+		{a:=1000;
+		a:=12340}
 }
