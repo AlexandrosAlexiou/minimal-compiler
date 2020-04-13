@@ -201,14 +201,14 @@ class Scope():
 
     # tostring for debugging purposes
     def __str__(self):
-        return '( ' + str(self.__nesting_level) + ', ' + self.__previous_scope.__str__() + ' )'
+        return '( Nesting Level: ' + str(self.__nesting_level) + ': Previous Scope: ' + self.__previous_scope.__str__() + ' )'
 
 
 class  Argument():
-    def __init__(self, parMode, nextArgument):
+    def __init__(self, parMode, nextArgument = None):
         self.__parMode = parMode
         self.__nextArgument = nextArgument
-    
+
     def get_parMode(self):
         return self.__parMode
 
@@ -223,7 +223,7 @@ class  Argument():
     
     # tostring for debugging purposes
     def __str__(self):
-        return '( ' + self.__parMode + ', ' + self.__nextArgument.__str__() + ' )'
+        return '( Argument Parmode: ' + self.__parMode + '--> NextArgument: ' + self.__nextArgument.__str__() + ' )'
 
 
 class Entity():
@@ -244,7 +244,7 @@ class Entity():
 
     # tostring for debugging purposes
     def __str__(self):
-        return  '( ' + ' Entity name: ' + self.__name + ',EntityType: ' + self.__entityType + ' )'
+        return  '( ' + ' Entity name: ' + self.__name + ',  EntityType: ' + self.__entityType + ' )'
 
 
 class Variable(Entity):
@@ -260,7 +260,7 @@ class Variable(Entity):
 
     # tostring for debugging purposes
     def __str__(self):
-        return super().__str__() + '( ' +'Variable offset: ' + str(self.__offset) + ' )'
+        return super().__str__() + '    ( ' +'Variable offset: ' + str(self.__offset) + ' )'
 
 
 class Function(Entity):
@@ -274,7 +274,7 @@ class Function(Entity):
         return self.__startQuad
     
     def set_start_quad(self, start_quad):
-        self.start_quad = start_quad
+        self.__startQuad = start_quad
 
     def get_arguments_list(self):
         return self.__arguments_list
@@ -290,7 +290,7 @@ class Function(Entity):
 
     # tostring for debugging purposes
     def __str__(self):
-        return super().__str__() + '( startQuad: ' + str(self.__startQuad) + ', framelen: ' + str(self.__framelength) + ' )'
+        return super().__str__() + '    ( startQuad: ' + str(self.__startQuad) + ', framelen: ' + str(self.__framelength) + ' )'
 
 
 class Parameter(Entity):
@@ -313,7 +313,7 @@ class Parameter(Entity):
     
     # tostring for debugging purposes
     def __str__(self):
-        return super().__str__() + '( Parameter mode: ' + self.__parMode + ', offset: ' + str(self.__offset) + ' )'
+        return super().__str__() + '    ( Parameter mode: ' + self.__parMode + ', offset: ' + str(self.__offset) + ' )'
 
 
 class TemporaryVariable(Entity):
@@ -329,7 +329,7 @@ class TemporaryVariable(Entity):
 
     # tostring for debugging purposes
     def __str__(self):
-        return super().__str__() + '(Temporary Variable offset: ' + str(self.__offset) + ')'
+        return super().__str__() + '    (Temporary Variable offset: ' + str(self.__offset) + ')'
 
 
 ##############################################################
@@ -668,15 +668,30 @@ def add_parameter_entity(name, parMode):
 def add_function_argument(parMode):
     if parMode == 'in':
         new_argument = Argument('CV')
+        #print(new_argument)
     else:
         new_argument = Argument('REF')
+        #print(new_argument)
     scopes[-2].get_entities_list()[-1].add_argument_in_list(new_argument)
-    if not scopes[-2].get_entities_list()[-1].get_arguments_list():
+    if len(scopes[-2].get_entities_list()[-1].get_arguments_list())>=2:
         scopes[-2].get_entities_list()[-1].get_arguments_list()[-2].set_nextArgument(new_argument)
 
 def add_variable_entity(name):
     variable_offset = scopes[-1].get_current_offset_and_advance()
     scopes[-1].add_Entity(Variable(name, variable_offset))
+
+# Print current scope and its enclosing ones.
+def print_scopes():
+    print('* main scope\n|')
+    for scope in scopes:
+        level = scope.get_nesting_level() + 1
+        print('    ' * level + str(scope))
+        for entity in scope.get_entities_list():
+            print('|    ' * level + str(entity))
+            if isinstance(entity, Function):
+                for arg in entity.get_arguments_list():
+                    print('|    ' * level + '|    ' + str(arg))
+    print('\n')
 
 ##############################################################
 #                                                            #
@@ -707,11 +722,13 @@ def program():
 
 def block(name):
     global scopes
+    print_scopes()
     declarations()
     subprograms()
     genquad('begin_block', name)
     if name is not mainprogram_name:
-        update_function_startQuad(name)
+        startQuad = nextquad()
+        update_function_startQuad(startQuad)
     statements()
     if name is mainprogram_name:
         halt_label = nextquad()
@@ -719,6 +736,8 @@ def block(name):
     genquad('end_block', name)
     if name is not mainprogram_name:
         update_function_framelength(scopes[-1].get_current_offset())
+    print_scopes()
+    scopes.pop()
 
 
 def declarations():
