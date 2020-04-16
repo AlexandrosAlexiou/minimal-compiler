@@ -15,5 +15,5 @@ program test3
 			return k 
 		}
 	}
-	call kappa()
+	u5 := kappa()
 }

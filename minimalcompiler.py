@@ -611,6 +611,8 @@ def newtemp():
     global tmpvars, next_tmpvar
     key = 'T_'+str(next_tmpvar)
     tmpvars[key] = None
+    offset = scopes[-1].get_current_offset_and_advance()
+    scopes[-1].add_Entity(TemporaryVariable(key, offset))
     next_tmpvar += 1
     return key
 

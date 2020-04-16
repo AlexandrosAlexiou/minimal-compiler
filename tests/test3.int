@@ -6,6 +6,8 @@
 5: retv, k, _, _
 6: end_block, kappa, _, _
 7: begin_block, test3, _, _
-8: call, kappa, _, _
-9: halt, _, _, _
-10: end_block, test3, _, _
+8: par, T_1, RET, _
+9: call, kappa, _, _
+10: :=, T_1, _, u5
+11: halt, _, _, _
+12: end_block, test3, _, _
