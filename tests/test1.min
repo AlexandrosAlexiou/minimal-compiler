@@ -1,6 +1,6 @@
 program test1
 {
-	declare k;
+	declare k,a;
 
 	{
 		if(-3<5 or 5>4) then 

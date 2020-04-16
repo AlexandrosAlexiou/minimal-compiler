@@ -1,20 +1,19 @@
 program test3
 {   
     declare u5;
-	function alex(inout xexe, in lalala)
+	procedure kappa(inout kkk, in aa)
 	{
-		declare a, b ,d ,g;
+		declare a;
+		procedure kappa(inout kkk)
+		{
+			declare k,a;
+			a := 3
+		}
 
-		a := 5000
-	}
-
-	procedure kappa()
-	{
-		declare k,a;
 		{
 			k := 30;
-			return k + id(in a)
+			return k 
 		}
 	}
-	m:=1000
+	call kappa()
 }

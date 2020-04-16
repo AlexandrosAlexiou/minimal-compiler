@@ -173,11 +173,11 @@ class Quad():
 
 
 class Scope():
-    def __init__(self, nestingLevel = 0, previous_scope = None):
+    def __init__(self, nestingLevel = 0, enclosing_scope = None):
         self.__entities_list = list()
         self.__nesting_level = nestingLevel
         self.__current_offset = 12
-        self.__previous_scope = previous_scope
+        self.__enclosing_scope = enclosing_scope
 
     def get_entities_list(self):
         return self.__entities_list
@@ -196,12 +196,12 @@ class Scope():
         self.__current_offset += 4  # this is the next offset
         return current
 
-    def get_previous_scope(self):
-        return self.__previous_scope
+    def get_enclosing_scope(self):
+        return self.__enclosing_scope
 
     # tostring for debugging purposes
     def __str__(self):
-        return '( Nesting Level: ' + str(self.__nesting_level) + ': Previous Scope: ' + self.__previous_scope.__str__() + ' )'
+        return '( Nesting Level: ' + str(self.__nesting_level) + ': Enclosing Scope: ' + self.__enclosing_scope.__str__() + ' )'
 
 
 class  Argument():
@@ -349,6 +349,7 @@ nextlabel = 0  # next quad label that is going to be created
 tmpvars = dict() # Temporary variable names used in intermediate code generation.
 next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label = -1
+main_program_framelength = -1
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -437,7 +438,7 @@ def error_line_message(lineno, charno, *args):
     for i, line in enumerate(infile):
         if i == lineno-1:
             print(line.replace('\t', ' ').replace('\n', ' ')) # \t and \n count as 1 character
-            print(ShellColors.GREEN + ' ' * charno + '^' + ShellColors.END)
+            print(ShellColors.GREEN + ' ' * (charno-1) + '^' + ShellColors.END)
     close_files()
     sys.exit(1)
 
@@ -639,46 +640,93 @@ def backpatch(label_list, z):
 #                   Symbol table functions                   #
 #                                                            #
 ##############################################################
+def isdeclared(name, entityType, nesting_level):
+    scope = scopes[nesting_level]
+    for i in range(len(scope.get_entities_list())):
+        for j in range(len(scope.get_entities_list())):
+            entity1 = scope.get_entities_list()[i]
+            entity2 = scope.get_entities_list()[j]
+            if entity1.get_name() == entity2.get_name() and entity1.get_entityType() == entity2.get_entityType() and entity1.get_name() == name and entity1.get_entityType() == entityType:
+                return True
+    return False
+
+def variable_is_parameter(name, nesting_level):
+    for i in range(len(scopes[nesting_level].get_entities_list())):
+        if scopes[nesting_level].get_entities_list()[i].get_entityType() == "Parameter" and scopes[nesting_level].get_entities_list()[i].get_name() == name:
+            return True
+    return False
+
+def search_entity(EntityName):
+    if not scopes:
+        return
+    current_scope = scopes[-1]
+    while current_scope != None:
+        for entity in current_scope.get_entities_list():
+            if entity.get_name() == EntityName:
+                return entity
+        current_scope = current_scope.get_enclosing_scope()
+
 def add_new_scope():
     if not scopes: # if scopes list is empty then add the main scope
         current_scope = Scope()
         scopes.append(current_scope)
         return
-    previous_scope = scopes[-1]
-    current_scope = Scope(previous_scope.get_nesting_level() + 1, previous_scope)
+    enclosing_scope = scopes[-1]
+    current_scope = Scope(enclosing_scope.get_nesting_level() + 1, enclosing_scope)
     scopes.append(current_scope)
 
+
 def add_function_entity(name):
+    nesting_level = scopes[-1].get_enclosing_scope().get_nesting_level()
+    if isdeclared(name, "Function", nesting_level):
+         error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Redefinition of \'%s\' inside the same scope.' % name)
     scopes[-2].add_Entity(Function(name))
 
+
 def update_function_startQuad(name):
+    global mainprogram_name
     startQuad = nextquad()
-    '''if name == mainprogram_name:
-        return startQuad'''
+    if name == mainprogram_name:
+        return startQuad
     scopes[-2].get_entities_list()[-1].set_start_quad(startQuad)
     return startQuad
 
-def update_function_framelength(framelength):
+
+def update_function_framelength(name, framelength):
+    global main_program_framelength, mainprogram_name
+    if name is mainprogram_name:
+        main_program_framelength = framelength
+        return
     scopes[-2].get_entities_list()[-1].set_framelength(framelength)
 
+
 def add_parameter_entity(name, parMode):
+    nesting_level = scopes[-1].get_nesting_level()
     parameter_offset = scopes[-1].get_current_offset_and_advance()
+    if isdeclared(name, "Parameter", nesting_level):
+         error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Redefinition of \'%s\' inside the same scope.' % name)
     scopes[-1].add_Entity(Parameter(name, parMode, parameter_offset))
+
 
 def add_function_argument(parMode):
     if parMode == 'in':
         new_argument = Argument('CV')
-        #print(new_argument)
     else:
         new_argument = Argument('REF')
-        #print(new_argument)
     scopes[-2].get_entities_list()[-1].add_argument_in_list(new_argument)
     if len(scopes[-2].get_entities_list()[-1].get_arguments_list())>=2:
         scopes[-2].get_entities_list()[-1].get_arguments_list()[-2].set_nextArgument(new_argument)
 
+
 def add_variable_entity(name):
+    nesting_level = scopes[-1].get_nesting_level()
     variable_offset = scopes[-1].get_current_offset_and_advance()
+    if isdeclared(name, "Variable", nesting_level):
+        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Redeclaration of \'%s\' inside the same scope.' % name)
+    if variable_is_parameter(name, nesting_level):
+        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Variable \'%s\' is a parameter therefore it cannot be redeclared.' % name)
     scopes[-1].add_Entity(Variable(name, variable_offset))
+
 
 # Print current scope and its enclosing ones.
 def print_scopes():
@@ -721,21 +769,18 @@ def program():
     
 
 def block(name):
-    global scopes
+    global scopes, main_program_framelength, mainprogram_name
     print_scopes()
     declarations()
     subprograms()
     genquad('begin_block', name)
-    if name is not mainprogram_name:
-        startQuad = nextquad()
-        update_function_startQuad(startQuad)
+    startQuad = update_function_startQuad(name)
     statements()
-    if name is mainprogram_name:
+    if name == mainprogram_name:
         halt_label = nextquad()
         genquad('halt')
     genquad('end_block', name)
-    if name is not mainprogram_name:
-        update_function_framelength(scopes[-1].get_current_offset())
+    update_function_framelength(name, scopes[-1].get_current_offset())
     print_scopes()
     scopes.pop()
 
@@ -1031,6 +1076,8 @@ def call_stat():
     global token
     if token.get_tk_type() is TokenType.ID_TK:
         procedure_id = token.get_tk_value()
+        if search_entity(procedure_id) is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined procedure \'%s\' '% procedure_id)
         token = lex()
         actualpars()
         genquad('call',procedure_id)
@@ -1182,7 +1229,7 @@ def factor():
     elif token.get_tk_type() is TokenType.ID_TK:
         ret = token.get_tk_value()
         token=lex()
-        tail = idtail()
+        tail = idtail(ret)
         if tail is not None:
             function_return = newtemp()
             genquad('par', function_return, 'RET')
@@ -1193,9 +1240,11 @@ def factor():
     return ret
 
 
-def idtail():
+def idtail(ret):
    global token
    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
+        if search_entity(ret) is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined function \'%s\' '% ret)
         return actualpars() 
 
 
@@ -1278,6 +1327,7 @@ def main(input_filename):
     # print quad equivalent code
     for Quad in quads_list:
         print(Quad)
+    print(main_program_framelength)
     close_files()
 
 
