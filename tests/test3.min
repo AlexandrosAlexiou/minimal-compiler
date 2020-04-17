@@ -1,19 +1,22 @@
 program test3
 {   
     declare u5;
-	procedure kappa(inout kkk, in aa)
+	procedure kappa(inout lalal, in aa)
 	{
-		declare a;
+		declare kkk,m;
 		procedure kappa(inout kkk)
 		{
-			declare k,a;
-			a := 3
+			declare m,a;
+			return kkk
 		}
 
 		{
-			k := 30;
-			return k 
+			kkk := 30;
+			return m
 		}
 	}
-	u5 := kappa()
+	{
+		return u5;
+		u5 := kappa(in u5)
+	}
 }

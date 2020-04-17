@@ -350,6 +350,7 @@ tmpvars = dict() # Temporary variable names used in intermediate code generation
 next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label = -1
 main_program_framelength = -1
+subprogram_exists = False
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -438,7 +439,7 @@ def error_line_message(lineno, charno, *args):
     for i, line in enumerate(infile):
         if i == lineno-1:
             print(line.replace('\t', ' ').replace('\n', ' ')) # \t and \n count as 1 character
-            print(ShellColors.GREEN + ' ' * (charno-1) + '^' + ShellColors.END)
+            print(ShellColors.GREEN + ' ' * (charno-2) + '^' + ShellColors.END)
     close_files()
     sys.exit(1)
 
@@ -706,7 +707,7 @@ def add_parameter_entity(name, parMode):
     nesting_level = scopes[-1].get_nesting_level()
     parameter_offset = scopes[-1].get_current_offset_and_advance()
     if isdeclared(name, "Parameter", nesting_level):
-         error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Redefinition of \'%s\' inside the same scope.' % name)
+         error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Redefinition of \'%s\'.' % name)
     scopes[-1].add_Entity(Parameter(name, parMode, parameter_offset))
 
 
@@ -724,9 +725,9 @@ def add_variable_entity(name):
     nesting_level = scopes[-1].get_nesting_level()
     variable_offset = scopes[-1].get_current_offset_and_advance()
     if isdeclared(name, "Variable", nesting_level):
-        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Redeclaration of \'%s\' inside the same scope.' % name)
+        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Redeclaration of \'%s\'.' % name)
     if variable_is_parameter(name, nesting_level):
-        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Variable \'%s\' is a parameter therefore it cannot be redeclared.' % name)
+        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Variable \'%s\' is a subprogram parameter therefore it cannot be redeclared.' % name)
     scopes[-1].add_Entity(Variable(name, variable_offset))
 
 
@@ -771,7 +772,7 @@ def program():
     
 
 def block(name):
-    global scopes, main_program_framelength, mainprogram_name
+    global scopes, mainprogram_name
     print_scopes()
     declarations()
     subprograms()
@@ -793,7 +794,7 @@ def declarations():
         token = lex()
         varlist() 
         if token.get_tk_type() is not TokenType.SEMICOLON_TK:
-            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \';\' but found \'%s\' instead' % token.get_tk_value())
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \';\' but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
 
 
@@ -805,14 +806,15 @@ def varlist():
         while token.get_tk_type() is TokenType.COMMA_TK:
             token = lex()
             if token.get_tk_type() is not TokenType.ID_TK:
-               error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected variable declaration but found \'%s\' instead' % token.get_tk_value())
+               error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected variable declaration but found \'%s\' instead.' % token.get_tk_value())
             add_variable_entity(token.get_tk_value())
             token = lex()
 
 
 def subprograms():
-    global token
+    global token,subprogram_exists
     while token.get_tk_type() is TokenType.FUNCTION_TK or token.get_tk_type() is TokenType.PROCEDURE_TK:
+        subprogram_exists = True
         token = lex()
         add_new_scope()
         if token.get_tk_type() is TokenType.ID_TK:
@@ -855,7 +857,7 @@ def formalparlist(func_name):
     while token.get_tk_type() is TokenType.COMMA_TK:
         token = lex()
         if token.get_tk_type() is not TokenType.IN_TK and token.get_tk_type() is not TokenType.INOUT_TK:
-           error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter declaration but found \'%s\' instead'% token.get_tk_value())
+           error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter declaration but found \'%s\' instead.'% token.get_tk_value())
         formalparitem(func_name)
 
 
@@ -865,7 +867,7 @@ def formalparitem(func_name):
         parMode = token.get_tk_value()
         token = lex()
         if token.get_tk_type() is not TokenType.ID_TK:
-            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter name but found \'%s\' instead'% token.get_tk_value()) 
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected formal parameter name but found \'%s\' instead.'% token.get_tk_value()) 
         parameter_name = token.get_tk_value()
         add_function_argument(parMode)
         add_parameter_entity(parameter_name, parMode)
@@ -891,6 +893,8 @@ def statement():
     global token
     if token.get_tk_type() is TokenType.ID_TK:
         lhand = token.get_tk_value()
+        if search_entity(lhand) is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined Entity \'%s\'.'% lhand)
         token = lex()
         rhand = assignment_stat()
         genquad(':=', rhand,'_', lhand)
@@ -930,7 +934,7 @@ def statement():
         token = lex()
         input_stat()
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected statement but found \'%s\' instead' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected statement but found \'%s\' instead.' % token.get_tk_value())
 
 
 def assignment_stat():
@@ -939,7 +943,7 @@ def assignment_stat():
         token=lex()
         return expression()
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':=\' but found \'%s\' instead' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':=\' but found \'%s\' instead.' % token.get_tk_value())
 
 
 def if_stat():
@@ -948,7 +952,7 @@ def if_stat():
         token = lex()
         (b_true,b_false) = condition() 
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
-           error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' after if condition but found \'%s\' instead' % token.get_tk_value())
+           error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' after if condition but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
         if token.get_tk_type() is TokenType.THEN_TK:
             token = lex()
@@ -960,9 +964,9 @@ def if_stat():
             elsepart()
             backpatch(if_list, nextquad())
         else:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead' % token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'then\' after if condition but found \'%s\' instead.' % token.get_tk_value())
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after if token but found \'%s\' instead' % token.get_tk_value())        
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after if token but found \'%s\' instead.' % token.get_tk_value())        
 
 
 def elsepart():
@@ -979,14 +983,14 @@ def while_stat():
         token = lex()
         (b_true, b_false) = condition()
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_type())
         token = lex()
         backpatch(b_true, nextquad())
         statements()
         genquad('jump','_','_',b_quad)
         backpatch(b_false, nextquad())
     else:
-         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'while\' but found \'%s\' instead'% token.get_tk_value())
+         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after \'while\' but found \'%s\' instead.'% token.get_tk_value())
 
 
 def doublewhile_stat():
@@ -995,11 +999,11 @@ def doublewhile_stat():
         token =lex()
         condition()
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_type())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_type())
         token = lex()
         statements()
         if token.get_tk_type() is not TokenType.ELSE_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'else\' inside doublewhile but found \'%s\' instead' % token.get_tk_type())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'else\' inside doublewhile but found \'%s\' instead.' % token.get_tk_type())
         token = lex()
         statements()
     else:
@@ -1030,11 +1034,11 @@ def forcase_stat():
                     #exit_list =merge(exit_list,tmp_list)
                     backpatch(b_false, nextquad())
                 else:
-                    error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead'% token.get_tk_value())
+                    error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead.'% token.get_tk_value())
             else:
-                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.'% token.get_tk_value())
         else:
-             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead.'% token.get_tk_value())
     if token.get_tk_type() is TokenType.DEFAULT_TK:
         token = lex()
         if token.get_tk_type() is TokenType.COLON_TK:
@@ -1042,10 +1046,10 @@ def forcase_stat():
             statements()
             #backpatch(exit_list, nextquad())
         else:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' after \'default\' but found \'%s\' instead'% token.get_tk_value()) 
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' after \'default\' but found \'%s\' instead.'% token.get_tk_value()) 
         
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'default:\' declaration but found \'%s\' instead'% token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'default:\' declaration but found \'%s\' instead.'% token.get_tk_value())
 
 
 def incase_stat():
@@ -1061,11 +1065,11 @@ def incase_stat():
                     token = lex()
                     statements()
                 else:
-                    error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead'% token.get_tk_value())
+                    error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \':\' but found \'%s\' instead.'% token.get_tk_value())
             else:
-                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.'% token.get_tk_value())
         else:
-             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead.'% token.get_tk_value())
 
 
 def return_stat():
@@ -1079,12 +1083,12 @@ def call_stat():
     if token.get_tk_type() is TokenType.ID_TK:
         procedure_id = token.get_tk_value()
         if search_entity(procedure_id) is None:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined procedure \'%s\' '% procedure_id)
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined procedure \'%s\'.'% procedure_id)
         token = lex()
         actualpars()
         genquad('call',procedure_id)
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected function or procedure id but found \'%s\' instead'% token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected function or procedure id but found \'%s\' instead.'% token.get_tk_value())
 
 
 def print_stat():
@@ -1094,10 +1098,10 @@ def print_stat():
         exp = expression()
         genquad('out',exp)
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.'% token.get_tk_value())
         token = lex()
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead.'% token.get_tk_value())
 
 
 def input_stat():
@@ -1105,12 +1109,14 @@ def input_stat():
     if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
         if token.get_tk_type() is not TokenType.ID_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead'% token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead.'% token.get_tk_value())
         id_name = token.get_tk_value()
+        if search_entity(id_name) is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined Entity \'%s\'.'% id_name)
         genquad('inp',id_name)
         token = lex()
         if token.get_tk_type()  is not  TokenType.RIGHT_PARENTHESIS_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead'% token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.'% token.get_tk_value())
         token = lex()
     else:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' but found \'%s\' instead'% token.get_tk_value())
@@ -1149,15 +1155,15 @@ def boolfactor():
             ret = condition()
             ret = ret[::-1]
             if token.get_tk_type()  is not  TokenType.RIGHT_BRACKET_TK:
-                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead.'% token.get_tk_value())
             token = lex()
         else:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'[\' after \'not\' but found \'%s\' instead'% token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'[\' after \'not\' but found \'%s\' instead.'% token.get_tk_value())
     elif token.get_tk_type() is TokenType.LEFT_BRACKET_TK:
         token = lex()
         ret = condition()
         if token.get_tk_type() is not TokenType.RIGHT_BRACKET_TK:
-                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead'% token.get_tk_value())
+                error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \']\' but found \'%s\' instead.'% token.get_tk_value())
         token = lex()
     else:
         exp1 = expression()
@@ -1177,7 +1183,7 @@ def relational_oper():
     if token.get_tk_type() is not TokenType.EQUAL_TK and token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and token.get_tk_type() is not TokenType.LESS_TK and \
         token.get_tk_type() is not TokenType.GREATER_THAN_OR_EQUAL_TK and token.get_tk_type() is not TokenType.GREATER_TK and token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and \
         token.get_tk_type() is not TokenType.NOT_EQUAL_TK:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected relational operator but found \'%s\' instead'% token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected relational operator but found \'%s\' instead.'% token.get_tk_value())
     token = lex()
     return op
 
@@ -1226,10 +1232,12 @@ def factor():
         token=lex()
         ret = expression()
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
     elif token.get_tk_type() is TokenType.ID_TK:
         ret = token.get_tk_value()
+        if search_entity(ret) is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined Entity \'%s\'.'% ret)
         token=lex()
         tail = idtail(ret)
         if tail is not None:
@@ -1238,15 +1246,13 @@ def factor():
             genquad('call', ret)
             ret = function_return
     else: 
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead.' % token.get_tk_value())
     return ret
 
 
-def idtail(ret):
-   global token
-   if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
-        if search_entity(ret) is None:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined function \'%s\' '% ret)
+def idtail(name):
+    global token
+    if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         return actualpars() 
 
 
@@ -1254,7 +1260,7 @@ def add_oper():
     global token
     op = token.get_tk_value()
     if token.get_tk_type() is not TokenType.PLUS_TK and token.get_tk_type() is not TokenType.MINUS_TK :
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'+\' or \'-\' but found \'%s\' instead' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'+\' or \'-\' but found \'%s\' instead.' % token.get_tk_value())
     token=lex()
     return op
 
@@ -1263,7 +1269,7 @@ def mul_oper():
     global token
     op = token.get_tk_value()
     if token.get_tk_type() is not TokenType.TIMES_TK and token.get_tk_type() is not TokenType.SLASH_TK:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'*\' or \'/\' but found \'%s\' instead' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'*\' or \'/\' but found \'%s\' instead.' % token.get_tk_value())
     token = lex()
     return op
 
@@ -1274,11 +1280,11 @@ def actualpars():
         token = lex()
         actualparlist()
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead' % token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
         return True
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after procedure or function call  but found \'%s\' instead'% token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after procedure or function call  but found \'%s\' instead.'% token.get_tk_value())
 
 
 def actualparlist():
@@ -1300,11 +1306,13 @@ def actualparitem():
         token = lex()
         parameter_id = token.get_tk_value()
         if token.get_tk_type() is not TokenType.ID_TK:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead' % token.get_tk_value())
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead.' % token.get_tk_value())
+        if search_entity(parameter_id) is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined actual parameter entity \'%s\'.'% parameter_id)
         token = lex()
         genquad('par', parameter_id, 'REF')
     else:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected parameter type in or inout but found \'%s\' instead' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected parameter type in or inout but found \'%s\' instead.' % token.get_tk_value())
 
 
 ##############################################################
@@ -1323,13 +1331,13 @@ def main(input_filename):
     token = lex()
     program()
     if token.get_tk_type() is not TokenType.EOF_TK:
-        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'EOF\' but found \'%s\' instead' % token.get_tk_value())
+        error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'EOF\' but found \'%s\' instead.' % token.get_tk_value())
 
     generate_intermediate_code_file()
     # print quad equivalent code
     for Quad in quads_list:
         print(Quad)
-    print(main_program_framelength)
+    print("Main program framelength: %d" % main_program_framelength)
     close_files()
 
 

@@ -16,7 +16,7 @@ program test1
 		while(5>3) 
 			a := a-3;
 
-		while(1000>30) 
+		while(k>30) 
 			a := a-100
 	}
 }
