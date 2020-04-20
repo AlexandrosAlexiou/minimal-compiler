@@ -351,6 +351,7 @@ next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label = -1
 main_program_framelength = -1
 subprogram_exists = False
+actual_pars = list() # List that holds the types of the actual parameters for error printing
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -450,7 +451,7 @@ def error_file_not_found(infile):
 
 
 def error(*args):
-    print('[' + ShellColors.RED + 'FATAL ERROR' + ShellColors.END + ']', *args)
+    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
     sys.exit(1)
 
             
@@ -653,21 +654,24 @@ def isdeclared(name, entityType, nesting_level):
                 return True
     return False
 
+
 def variable_is_parameter(name, nesting_level):
     for i in range(len(scopes[nesting_level].get_entities_list())):
         if scopes[nesting_level].get_entities_list()[i].get_entityType() == "Parameter" and scopes[nesting_level].get_entities_list()[i].get_name() == name:
             return True
     return False
 
+
 def search_entity(EntityName):
     if not scopes:
         return
     current_scope = scopes[-1]
-    while current_scope != None:
+    while current_scope != None: #search until global scope
         for entity in current_scope.get_entities_list():
             if entity.get_name() == EntityName:
                 return entity
         current_scope = current_scope.get_enclosing_scope()
+
 
 def add_new_scope():
     if not scopes: # if scopes list is empty then add the main scope
@@ -771,6 +775,9 @@ def program():
        error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected \'program\' keyword but found \'%s\' instead.' % token.get_tk_value())
     
 
+##############################################################
+#                       Main block                           #
+##############################################################
 def block(name):
     global scopes, mainprogram_name
     print_scopes()
@@ -873,7 +880,9 @@ def formalparitem(func_name):
         add_parameter_entity(parameter_name, parMode)
         token = lex()
 
-
+##############################################################
+#                       Statements                           #
+##############################################################
 def statements():
     global token
     if token.get_tk_type() is TokenType.LEFT_BRACE_TK:
@@ -894,7 +903,7 @@ def statement():
     if token.get_tk_type() is TokenType.ID_TK:
         lhand = token.get_tk_value()
         if search_entity(lhand) is None:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined Entity \'%s\'.'% lhand)
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined variable id \'%s\'.'% lhand)
         token = lex()
         rhand = assignment_stat()
         genquad(':=', rhand,'_', lhand)
@@ -1112,7 +1121,7 @@ def input_stat():
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected variable id but found \'%s\' instead.'% token.get_tk_value())
         id_name = token.get_tk_value()
         if search_entity(id_name) is None:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined Entity \'%s\'.'% id_name)
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined variable id \'%s\'.'% id_name)
         genquad('inp',id_name)
         token = lex()
         if token.get_tk_type()  is not  TokenType.RIGHT_PARENTHESIS_TK:
@@ -1224,7 +1233,7 @@ def term():
 
 
 def factor(): 
-    global token
+    global token, actual_pars
     if token.get_tk_type() is TokenType.NUMBER_TK :
         ret = token.get_tk_value()
         token = lex()
@@ -1236,15 +1245,28 @@ def factor():
         token = lex()
     elif token.get_tk_type() is TokenType.ID_TK:
         ret = token.get_tk_value()
-        if search_entity(ret) is None:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined Entity \'%s\'.'% ret)
+        error_pars_charno = token.get_tk_charno()
+        error_pars_lineno = token.get_tk_lineno()
+        entity = search_entity(ret)
+        if  entity is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined id \'%s\'.'% ret)
         token=lex()
         tail = idtail(ret)
         if tail is not None:
+            formal_pars = entity.get_arguments_list()
+            # Check if actual parameter number is equal to formal parameters number
+            if len(formal_pars) != len(actual_pars):
+                error_line_message(error_pars_lineno,error_pars_charno,'{} \'{}\' actual parameters do not match formal parameters.' .format(entity.get_entityType(), ret))
+            # Check if actual parameters are identical to formal parameters
+            for arg in range(len(actual_pars)):
+                if actual_pars[arg] != formal_pars[arg].get_parMode():
+                   error_line_message(error_pars_lineno,error_pars_charno,'{} \'{}\' actual parameters do not match formal parameters.' .format(entity.get_entityType(), ret)) 
             function_return = newtemp()
             genquad('par', function_return, 'RET')
             genquad('call', ret)
             ret = function_return
+            # Reset actual_pars list for next subprogram inspection
+            actual_pars = list()
     else: 
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead.' % token.get_tk_value())
     return ret
@@ -1253,7 +1275,7 @@ def factor():
 def idtail(name):
     global token
     if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
-        return actualpars() 
+        return actualpars(name) 
 
 
 def add_oper():
@@ -1274,11 +1296,11 @@ def mul_oper():
     return op
 
 
-def actualpars():
+def actualpars(name):
     global token
     if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        actualparlist()
+        actualparlist(name)
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
@@ -1287,7 +1309,7 @@ def actualpars():
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after procedure or function call  but found \'%s\' instead.'% token.get_tk_value())
 
 
-def actualparlist():
+def actualparlist(name):
     global token
     if token.get_tk_type() is TokenType.IN_TK or token.get_tk_type() is TokenType.INOUT_TK:
         actualparitem()
@@ -1299,10 +1321,12 @@ def actualparlist():
 def actualparitem():
     global token
     if token.get_tk_type() is TokenType.IN_TK:
+        actual_pars.append('CV')
         token = lex()
         exp = expression()
         genquad('par', exp, 'CV')
     elif token.get_tk_type() is TokenType.INOUT_TK:
+        actual_pars.append('REF')
         token = lex()
         parameter_id = token.get_tk_value()
         if token.get_tk_type() is not TokenType.ID_TK:
