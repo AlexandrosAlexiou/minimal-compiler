@@ -440,16 +440,17 @@ def generate_c_code_file():
     for quad in quads_list:
         newlabel = True
         if quad.get_op() == 'begin_block':
-            newlabel = False
             if quad.get_x() == mainprogram_name:
-                declares = False
-                buffer = '\n\tint '
-                for var in variables_to_declare:
-                    has_declares = True
-                    buffer += var + ', '
-                if has_declares:
+                if variables_to_declare:
+                    newlabel = False
+                    buffer = '\n\tint '
+                    for var in variables_to_declare:
+                        has_declares = True
+                        buffer += var + ', '
                     buffer = buffer[:-2] + ';'
-                c_codefile.write('int main(void)\n{' + buffer + '\n')
+                    c_codefile.write('int main(void)\n{' + buffer + '\n')
+                else:
+                    c_codefile.write('int main(void)\n{' + '\n')
         elif quad.get_op() == 'end_block':
             newlabel = False
             c_codefile.write('\tL_' + str(quad.get_label()) + ':{}\n}\n')
@@ -469,7 +470,7 @@ def generate_c_code_file():
         elif quad.get_op() == 'jump':
             c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'goto L_' + str(quad.get_z()) + ';\n')
         elif quad.get_op() == 'out':
-            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'printf("%d\n", ' + str(quad.get_x()) + ';\n')
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'printf("%d\\n", ' + str(quad.get_x()) + ');\n')
         elif quad.get_op() == 'retv':
             c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'return (' + str(quad.get_x()) + ');\n')
             

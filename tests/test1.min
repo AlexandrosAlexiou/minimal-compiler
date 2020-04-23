@@ -1,6 +1,6 @@
 program test1
 {
-	declare k,a;
+	declare a,k;
 
 	{
 		if(-3<5 or 5>4) then 
@@ -13,12 +13,13 @@ program test1
 		else 
 			a := 4;
 
-		k := 500;
+		k := 1000;
 
 		while(a>3) 
 			a := a-3;
 
-		while(k>30) 
-			k := k-100
+		while(k>0)
+			{print(10); 
+			k := k-100}
 	}
 }
