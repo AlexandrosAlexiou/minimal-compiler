@@ -18,6 +18,8 @@ program test1
 		while(a>3) 
 			a := a-3;
 
+		input(a);
+		print(a);
 		while(k>0)
 			{print(10); 
 			k := k-100}

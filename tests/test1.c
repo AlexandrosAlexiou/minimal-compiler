@@ -18,18 +18,20 @@ int main(void)
 	L_13: a=3;
 	L_14: goto L_16;
 	L_15: a=4;
-	L_16: k=10000;
+	L_16: k=1000;
 	L_17: if(a> 3) goto L_19;
 	L_18: goto L_22;
 	L_19: T_2=a - 3;
 	L_20: a=T_2;
 	L_21: goto L_17;
-	L_22: if(k> 0) goto L_24;
-	L_23: goto L_28;
-	L_24: printf("%d\n", 10);
-	L_25: T_3=k - 100;
-	L_26: k=T_3;
-	L_27: goto L_22;
-	L_28: return 0;
-	L_29:{}
+	L_22: scanf("%d", &a);
+	L_23: printf("%d\n", a);
+	L_24: if(k> 0) goto L_26;
+	L_25: goto L_30;
+	L_26: printf("%d\n", 10);
+	L_27: T_3=k - 100;
+	L_28: k=T_3;
+	L_29: goto L_24;
+	L_30: return 0;
+	L_31:{}
 }

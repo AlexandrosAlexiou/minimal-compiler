@@ -349,7 +349,7 @@ mainprogram_name = '' # main program name to generate halt quad
 quads_list= list() # Program equivalent in quadruples.
 scopes = list() # Program current scopes
 nextlabel = 0  # next quad label that is going to be created
-variables_to_declare = list() # all variable names used in intermediate code generation.
+variables_to_declare = list() # all variable names used c equivalent file to declare all the variables of the program.
 next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label = -1
 main_program_framelength = -1
@@ -471,6 +471,8 @@ def generate_c_code_file():
             c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'goto L_' + str(quad.get_z()) + ';\n')
         elif quad.get_op() == 'out':
             c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'printf("%d\\n", ' + str(quad.get_x()) + ');\n')
+        elif quad.get_op() == 'inp':
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'scanf("%d", ' + '&' + str(quad.get_x()) + ');\n')
         elif quad.get_op() == 'retv':
             c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'return (' + str(quad.get_x()) + ');\n')
             
