@@ -351,7 +351,9 @@ next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label = -1
 main_program_framelength = -1
 subprogram_exists = False
-actual_pars = list() # List that holds the types of the actual parameters for error printing
+actual_pars = list() # List that holds the types of the actual parameters for error handling
+inside_function = list()
+has_return_stat = list()
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -819,9 +821,14 @@ def varlist():
 
 
 def subprograms():
-    global token,subprogram_exists
+    global token, subprogram_exists, inside_function, has_return_stat
     while token.get_tk_type() is TokenType.FUNCTION_TK or token.get_tk_type() is TokenType.PROCEDURE_TK:
         subprogram_exists = True
+        if token.get_tk_type() is TokenType.FUNCTION_TK:
+            inside_function.append(True)
+        else:
+            inside_function.append(False)
+        has_return_stat.append(False)
         token = lex()
         add_new_scope()
         if token.get_tk_type() is TokenType.ID_TK:
@@ -830,7 +837,12 @@ def subprograms():
             add_function_entity(name)
             funcbody(name)
         else:
-             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram name but found \'%s\' instead.' % token.get_tk_value())
+             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected subprogram name but found \'%s\' instead.' % token.get_tk_value()) 
+        if inside_function.pop():
+            if not has_return_stat.pop():
+                error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected return statement in function body but found \'%s\' instead.' % token.get_tk_value())
+        else:
+            has_return_stat.pop()
 
 
 def funcbody(name):
@@ -931,6 +943,11 @@ def statement():
         token = lex()
         incase_stat()
     elif token.get_tk_type() is TokenType.RETURN_TK:
+        global inside_function, has_return_stat
+        if not inside_function or not inside_function[-1]:
+             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Unexpected \'return\' statement outside of function body')
+        else:
+            has_return_stat[-1] = True
         token = lex()
         return_stat()
     elif token.get_tk_type() is TokenType.CALL_TK:

@@ -1,36 +1,37 @@
 program test3
 {   
     declare u5;
-	procedure kappa(inout lalal, in aa)
+	function kappa(inout lalal, in aa)
 	{
 		declare kkk,m, k;
-		procedure kappa(inout kkk)
+		function kappa(inout kkk)
 		{
 			declare m,a;
-			{if(-3<5 or 5>4) then 
-				a:=3 
-			else 
-				a:=4;
+			{	
+				if(-3<5 or 5>4) then 
+					a:=3 
+				else 
+					a:=4;
 
-			if( 1000 > 300 and 10<100) then 
-				a:= 3
-			else 
-				a := 555;
+				if( 1000 > 300 and 10<100) then 
+					a:= 3
+				else 
+					a := 555;
 
-			while(5>3) 
-				a := a-3;
+				while(5>3) 
+					a := a-3;
 
-			while(k>30) 
-				a := a-100}
+				while(k>30) 
+					a := a-100;
+				
+				return m
+			}
 		}
 
-		{
+		{	
 			kkk := 30;
-			return m
+			return kkk
 		}
 	}
-	{
-		return u5;
-		u5 := kappa(inout u5, in u5)
-	}
+	print(u5)
 }
