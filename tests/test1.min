@@ -4,19 +4,21 @@ program test1
 
 	{
 		if(-3<5 or 5>4) then 
-			a:=3 
+			a:=1 
 		else 
-			a:=4;
+			a:=2;
 
-		if( 1000 > 300 and 10<100) then 
+		if( a > 1 and a < 2) then 
 			a:= 3
 		else 
-			a := 555;
+			a := 4;
 
-		while(5>3) 
+		k := 500;
+
+		while(a>3) 
 			a := a-3;
 
 		while(k>30) 
-			a := a-100
+			k := k-100
 	}
 }

@@ -14,7 +14,7 @@ program test4
             default:    a := 5000;
 
         a := 1000;
-        a:= b + 5;
+        a:= b + 5
     }
 }
 

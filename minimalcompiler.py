@@ -12,8 +12,10 @@ import string
 class ShellColors:
     GREEN = '\033[92m'
     RED = '\033[91m'
+    WARNING='\033[105m'
     END = '\033[0m'
     BOLD = '\033[1m'
+    UNDERLINED = "\033[4m"
 
 
 # Token ids
@@ -342,11 +344,12 @@ charno = 0 #Current Character number from the start of the line
 token = Token() #Each token returned from the lexical analyzer will be stored here
 infile = '' # input file pointer
 intfile = '' # intermediate code file
+c_codefile = '' # intermediate code to C equivalent file
 mainprogram_name = '' # main program name to generate halt quad
 quads_list= list() # Program equivalent in quadruples.
 scopes = list() # Program current scopes
 nextlabel = 0  # next quad label that is going to be created
-tmpvars = dict() # Temporary variable names used in intermediate code generation.
+variables_to_declare = list() # all variable names used in intermediate code generation.
 next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label = -1
 main_program_framelength = -1
@@ -411,17 +414,19 @@ tokens = {
 #                                                            #
 ##############################################################
 # Open files.
-def open_files(input_filename,intermediate_code_filename):
-    global infile,intfile
+def open_files(input_filename,intermediate_code_filename, c_equivalent_filepath):
+    global infile, intfile, c_codefile 
     infile = open(input_filename,  'r', encoding='utf-8')
-    intfile= open(intermediate_code_filename,  'w', encoding='utf-8')
+    intfile = open(intermediate_code_filename,  'w', encoding='utf-8')
+    c_codefile = open(c_equivalent_filepath,  'w', encoding='utf-8')
 
 
 # Close files.
 def close_files():
-    global infile,intfile
+    global infile, intfile, c_codefile
     infile.close()
     intfile.close()
+    c_codefile.close()
 
 
 # Generate a file containing the intermediate code
@@ -429,7 +434,45 @@ def generate_intermediate_code_file():
     for quad in quads_list:
         intfile.write(quad.quad_to_file())
 
-        
+# Generate a file containing the intermediate code equivalent to C
+def generate_c_code_file():
+    c_codefile.write('#include <stdio.h>\n\n')
+    for quad in quads_list:
+        newlabel = True
+        if quad.get_op() == 'begin_block':
+            newlabel = False
+            if quad.get_x() == mainprogram_name:
+                declares = False
+                buffer = '\n\tint '
+                for var in variables_to_declare:
+                    has_declares = True
+                    buffer += var + ', '
+                if has_declares:
+                    buffer = buffer[:-2] + ';'
+                c_codefile.write('int main(void)\n{' + buffer + '\n')
+        elif quad.get_op() == 'end_block':
+            newlabel = False
+            c_codefile.write('\tL_' + str(quad.get_label()) + ':{}\n}\n')
+        elif quad.get_op() == 'halt':
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' +'return 0;\n')
+        elif quad.get_op() in ('=', '>', '<', '>=', '<=', '<>'):
+            c_operator = quad.get_op()
+            if c_operator == '=':
+                c_operator = '=='
+            elif c_operator == '<>':
+                c_operator = '!='
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'if('+str( quad.get_x() ) + c_operator + ' '+str( quad.get_y() ) +') goto L_' + str( quad.get_z() ) + ';\n')
+        elif quad.get_op() in ('+', '-', '/', '*'):
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + str(quad.get_z()) + '=' + str(quad.get_x()) + ' ' + str(quad.get_op()) + ' ' +  str(quad.get_y()) + ';\n')
+        elif quad.get_op() == ':=':
+             c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + str(quad.get_z()) + '=' + str(quad.get_x()) + ';\n')
+        elif quad.get_op() == 'jump':
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'goto L_' + str(quad.get_z()) + ';\n')
+        elif quad.get_op() == 'out':
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'printf("%d\n", ' + str(quad.get_x()) + ';\n')
+        elif quad.get_op() == 'retv':
+            c_codefile.write('\tL_' + str(quad.get_label()) + ': ' + 'return (' + str(quad.get_x()) + ');\n')
+            
 ##############################################################
 #                                                            #
 #                   Error printing                           #
@@ -456,7 +499,9 @@ def error(*args):
     print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
     sys.exit(1)
 
-            
+def warning(*args):
+    print( ShellColors.WARNING + '[' + 'Warning' + ']' + ShellColors.END ,ShellColors.UNDERLINED + str(*args) + ShellColors.END)
+
 ##############################################################
 #                                                            #
 #                   Lexical analyzer                         #
@@ -612,13 +657,13 @@ def genquad(op=None, x = '_', y = '_', z = '_'):
 
 
 def newtemp():
-    global tmpvars, next_tmpvar
-    key = 'T_'+str(next_tmpvar)
-    tmpvars[key] = None
+    global variables_to_declare, next_tmpvar
+    tempvar = 'T_'+str(next_tmpvar)
+    variables_to_declare.append(tempvar)
     offset = scopes[-1].get_current_offset_and_advance()
-    scopes[-1].add_Entity(TemporaryVariable(key, offset))
+    scopes[-1].add_Entity(TemporaryVariable(tempvar, offset))
     next_tmpvar += 1
-    return key
+    return tempvar
 
 
 def emptylist():
@@ -811,12 +856,14 @@ def varlist():
     global token
     if token.get_tk_type() is TokenType.ID_TK:
         add_variable_entity(token.get_tk_value())
+        variables_to_declare.append(token.get_tk_value())
         token = lex()
         while token.get_tk_type() is TokenType.COMMA_TK:
             token = lex()
             if token.get_tk_type() is not TokenType.ID_TK:
                error_line_message(token.get_tk_lineno(), token.get_tk_charno(),'Expected variable declaration but found \'%s\' instead.' % token.get_tk_value())
             add_variable_entity(token.get_tk_value())
+            variables_to_declare.append(token.get_tk_value())
             token = lex()
 
 
@@ -1365,7 +1412,7 @@ def main(input_filename):
 
     interm_filepath = input_filename[:-4] + '.int'
     c_equivalent_filepath = input_filename[:-4] + '.c'
-    open_files(input_filename,interm_filepath)
+    open_files(input_filename, interm_filepath, c_equivalent_filepath)
 
     global token
     #Begin syntax analysis
@@ -1375,6 +1422,15 @@ def main(input_filename):
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'EOF\' but found \'%s\' instead.' % token.get_tk_value())
 
     generate_intermediate_code_file()
+    if not subprogram_exists:
+        generate_c_code_file()
+    else:
+        warning("Subprogram declared. Intermediate code to C equivalent file generation aborted.")
+        # close and delete the empty file
+        global c_codefile
+        c_codefile.close()
+        os.remove(c_equivalent_filepath)
+
     # print quad equivalent code
     for Quad in quads_list:
         print(Quad)
