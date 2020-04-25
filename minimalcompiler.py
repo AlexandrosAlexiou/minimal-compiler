@@ -8,7 +8,7 @@ import string
 #                                                            #
 ##############################################################
 
-# For Error and warning printing
+# For Error, warning and scopes printing
 class ShellColors:
     GREEN = '\033[92m'
     RED = '\033[91m'
@@ -16,7 +16,8 @@ class ShellColors:
     END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINED = "\033[4m"
-
+    YELLOW = "\033[93m"
+    LIGHT_GRAY = "\033[90m"
 
 # Token ids
 class TokenType():
@@ -203,10 +204,10 @@ class Scope():
 
     # tostring for debugging purposes
     def __str__(self):
-        return '( Nesting Level: ' + str(self.__nesting_level) + ': Enclosing Scope: ' + self.__enclosing_scope.__str__() + ' )'
+        return '( ' +ShellColors.RED + 'Nesting Level: ' +ShellColors.END + str(self.__nesting_level) + ': Enclosing Scope: ' + self.__enclosing_scope.__str__() + ' )'
 
 
-class  Argument():
+class Argument():
     def __init__(self, parMode, nextArgument = None):
         self.__parMode = parMode
         self.__nextArgument = nextArgument
@@ -225,7 +226,7 @@ class  Argument():
     
     # tostring for debugging purposes
     def __str__(self):
-        return '( Argument Parmode: ' + self.__parMode + '--> NextArgument: ' + self.__nextArgument.__str__() + ' )'
+        return '('+ ShellColors.LIGHT_GRAY + 'Argument Parmode: ' + ShellColors.END + self.__parMode + '-->'+ ShellColors.LIGHT_GRAY + 'NextArgument: ' + ShellColors.END + self.__nextArgument.__str__() + ' )'
 
 
 class Entity():
@@ -246,7 +247,7 @@ class Entity():
 
     # tostring for debugging purposes
     def __str__(self):
-        return  '( ' + ' Entity name: ' + self.__name + ',  EntityType: ' + self.__entityType + ' )'
+        return  '( ' + ShellColors.YELLOW + ' Entity name: ' + ShellColors.END + self.__name + ',  EntityType: ' + self.__entityType + ' )'
 
 
 class Variable(Entity):
@@ -410,7 +411,7 @@ tokens = {
 
 ##############################################################
 #                                                            #
-#                  Open/Close I/O files                      #
+#                        I/O files                           #
 #                                                            #
 ##############################################################
 # Open files.
@@ -501,6 +502,7 @@ def error_file_not_found(infile):
 def error(*args):
     print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
     sys.exit(1)
+
 
 def warning(*args):
     print( ShellColors.WARNING + '[' + 'Warning' + ']' + ShellColors.END ,ShellColors.UNDERLINED + str(*args) + ShellColors.END)
@@ -697,11 +699,9 @@ def backpatch(label_list, z):
 def isdeclared(name, entityType, nesting_level):
     scope = scopes[nesting_level]
     for i in range(len(scope.get_entities_list())):
-        for j in range(len(scope.get_entities_list())):
-            entity1 = scope.get_entities_list()[i]
-            entity2 = scope.get_entities_list()[j]
-            if entity1.get_name() == entity2.get_name() and entity1.get_entityType() == entity2.get_entityType() and entity1.get_name() == name and entity1.get_entityType() == entityType:
-                return True
+        entity1 = scope.get_entities_list()[i]
+        if entity1.get_name() == name and entity1.get_entityType() == entityType:
+            return True
     return False
 
 
@@ -787,15 +787,15 @@ def add_variable_entity(name):
 
 # Print current scope and its enclosing ones.
 def print_scopes():
-    print('* main scope\n|')
+    print(ShellColors.UNDERLINED + 'main scope' + ShellColors.END)
     for scope in scopes:
         level = scope.get_nesting_level() + 1
         print('    ' * level + str(scope))
         for entity in scope.get_entities_list():
-            print('|    ' * level + str(entity))
+            print('     ' * level + str(entity))
             if isinstance(entity, Function):
                 for arg in entity.get_arguments_list():
-                    print('|    ' * level + '|    ' + str(arg))
+                    print('     ' * level + '     ' + str(arg))
     print('\n')
 
 ##############################################################
@@ -826,7 +826,7 @@ def program():
     
 
 ##############################################################
-#                       Main block                           #
+######################### Main block #########################
 ##############################################################
 def block(name):
     global scopes, mainprogram_name
@@ -843,7 +843,9 @@ def block(name):
     update_function_framelength(name, scopes[-1].get_current_offset())
     print_scopes()
     scopes.pop()
-
+##############################################################
+##############################################################
+##############################################################
 
 def declarations():
     global token
@@ -942,9 +944,7 @@ def formalparitem(func_name):
         add_parameter_entity(parameter_name, parMode)
         token = lex()
 
-##############################################################
-#                       Statements                           #
-##############################################################
+
 def statements():
     global token
     if token.get_tk_type() is TokenType.LEFT_BRACE_TK:
@@ -963,12 +963,12 @@ def statements():
 def statement():
     global token
     if token.get_tk_type() is TokenType.ID_TK:
-        lhand = token.get_tk_value()
-        if search_entity(lhand) is None:
-            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined variable id \'%s\'.'% lhand)
+        target = token.get_tk_value()
+        if search_entity(target) is None:
+            error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined variable id \'%s\'.'% target)
         token = lex()
-        rhand = assignment_stat()
-        genquad(':=', rhand,'_', lhand)
+        value = assignment_stat()
+        genquad(':=', value,'_', target)
     elif token.get_tk_type() is TokenType.IF_TK:
         token = lex()
         if_stat()
@@ -1256,8 +1256,12 @@ def boolfactor():
 def relational_oper():
     global token
     op = token.get_tk_value()
-    if token.get_tk_type() is not TokenType.EQUAL_TK and token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and token.get_tk_type() is not TokenType.LESS_TK and \
-        token.get_tk_type() is not TokenType.GREATER_THAN_OR_EQUAL_TK and token.get_tk_type() is not TokenType.GREATER_TK and token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and \
+    if  token.get_tk_type() is not TokenType.EQUAL_TK and  \
+        token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and \
+        token.get_tk_type() is not TokenType.LESS_TK and \
+        token.get_tk_type() is not TokenType.GREATER_THAN_OR_EQUAL_TK and \
+        token.get_tk_type() is not TokenType.GREATER_TK and  \
+        token.get_tk_type() is not TokenType.LESS_THAN_OR_EQUAL_TK and \
         token.get_tk_type() is not TokenType.NOT_EQUAL_TK:
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected relational operator but found \'%s\' instead.'% token.get_tk_value())
     token = lex()
@@ -1318,7 +1322,7 @@ def factor():
         if  entity is None:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined id \'%s\'.'% ret)
         token=lex()
-        tail = idtail(ret)
+        tail = idtail()
         if tail is not None:
             formal_pars = entity.get_arguments_list()
             # Check if actual parameter number is equal to formal parameters number
@@ -1339,10 +1343,10 @@ def factor():
     return ret
 
 
-def idtail(name):
+def idtail():
     global token
     if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
-        return actualpars(name) 
+        return actualpars() 
 
 
 def add_oper():
@@ -1363,11 +1367,11 @@ def mul_oper():
     return op
 
 
-def actualpars(name):
+def actualpars():
     global token
     if token.get_tk_type() is TokenType.LEFT_PARENTHESIS_TK:
         token = lex()
-        actualparlist(name)
+        actualparlist()
         if token.get_tk_type() is not TokenType.RIGHT_PARENTHESIS_TK:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \')\' but found \'%s\' instead.' % token.get_tk_value())
         token = lex()
@@ -1376,7 +1380,7 @@ def actualpars(name):
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected \'(\' after procedure or function call  but found \'%s\' instead.'% token.get_tk_value())
 
 
-def actualparlist(name):
+def actualparlist():
     global token
     if token.get_tk_type() is TokenType.IN_TK or token.get_tk_type() is TokenType.INOUT_TK:
         actualparitem()

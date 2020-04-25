@@ -32,5 +32,10 @@
 31: end_block, kappa, _, _
 32: begin_block, test3, _, _
 33: out, u5, _, _
-34: halt, _, _, _
-35: end_block, test3, _, _
+34: par, u5, REF, _
+35: par, u5, CV, _
+36: par, T_4, RET, _
+37: call, kappa, _, _
+38: :=, T_4, _, u5
+39: halt, _, _, _
+40: end_block, test3, _, _

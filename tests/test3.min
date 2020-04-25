@@ -3,10 +3,10 @@ program test3
     declare u5;
 	function kappa(inout lalal, in aa)
 	{
-		declare kkk,m, k;
+		declare kkk,m, k,u5;
 		function kappa(inout kkk)
 		{
-			declare m,a;
+			declare m,a,u5;
 			{	
 				if(-3<5 or 5>4) then 
 					a:=3 
@@ -33,5 +33,6 @@ program test3
 			return kkk
 		}
 	}
-	print(u5)
+	{print(u5);
+	u5 := kappa(inout u5, in u5)}
 }
