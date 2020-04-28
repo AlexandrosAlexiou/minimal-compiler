@@ -226,7 +226,7 @@ class Argument():
     
     # tostring for debugging purposes
     def __str__(self):
-        return '('+ ShellColors.LIGHT_GRAY + 'Argument Parmode: ' + ShellColors.END + self.__parMode + '-->'+ ShellColors.LIGHT_GRAY + 'NextArgument: ' + ShellColors.END + self.__nextArgument.__str__() + ' )'
+        return '( '+ ShellColors.LIGHT_GRAY + 'Argument Parmode: ' + ShellColors.END + self.__parMode + '-->'+ ShellColors.LIGHT_GRAY + 'NextArgument: ' + ShellColors.END + self.__nextArgument.__str__() + ' )'
 
 
 class Entity():
@@ -234,16 +234,12 @@ class Entity():
     def __init__(self, name, entityType): 
         self.__name = name
         self.__entityType = entityType
-        self.__nextEntity = None
 
     def get_name(self):
         return self.__name
 
     def get_entityType(self):
         return self.__entityType
-
-    def get_nextEntity(self):
-        return self.__nextEntity
 
     # tostring for debugging purposes
     def __str__(self):

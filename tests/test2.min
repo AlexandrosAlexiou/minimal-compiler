@@ -12,9 +12,7 @@ program test2
 				when ( 6 > 7) : a := a + 8
 				default: a :=a + 9;
 			
-			//call id();
 			print ( (-3+4) * (-3+10) + (-3+4) * (-3+10)  );
-			//print ( id ()  );
 			print ( 1000  )
 		}
 }

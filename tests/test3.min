@@ -6,7 +6,8 @@ program test3
 		declare kkk,m, k,u5;
 		function randomfunc(in kkk)
 		{
-			declare m,a,u5;
+			declare m,a;
+			declare u5;
 			{	
 				if(-3<5 or 5>4) then 
 					a:=3 
