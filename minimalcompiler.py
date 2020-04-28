@@ -12,7 +12,7 @@ import string
 class ShellColors:
     GREEN = '\033[92m'
     RED = '\033[91m'
-    WARNING='\033[105m'
+    WARNING="\033[35m"
     END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINED = "\033[4m"
@@ -332,7 +332,7 @@ class TemporaryVariable(Entity):
 
     # tostring for debugging purposes
     def __str__(self):
-        return super().__str__() + '    (Temporary Variable offset: ' + str(self.__offset) + ')'
+        return super().__str__() + '    ( Temporary Variable offset: ' + str(self.__offset) + ' )'
 
 
 ##############################################################
@@ -354,10 +354,9 @@ variables_to_declare = list() # all variable names used c equivalent file to dec
 next_tmpvar = 1  # Temporary variables. eg. T_1 ... T_2 etc.
 halt_label = -1
 main_program_framelength = -1
-subprogram_exists = False
-actual_pars = list() # List that holds the types of the actual parameters for error handling
-inside_function = list()
-has_return_stat = list()
+subprogram_exists = False # flag to check if the equivalent C file can be generated
+inside_function = list() # If last element is true then we are currently inside a function
+has_return_stat = list() # and if last element is true then we have return stat
 #Dictionary to store bound words and token values
 tokens = {
     '+':            TokenType.PLUS_TK,
@@ -435,6 +434,7 @@ def generate_intermediate_code_file():
     for quad in quads_list:
         intfile.write(quad.quad_to_file())
 
+
 # Generate a file containing the intermediate code equivalent to C
 def generate_c_code_file():
     c_codefile.write('#include <stdio.h>\n\n')
@@ -505,7 +505,7 @@ def error(*args):
 
 
 def warning(*args):
-    print( ShellColors.WARNING + '[' + 'Warning' + ']' + ShellColors.END ,ShellColors.UNDERLINED + str(*args) + ShellColors.END)
+    print( ShellColors.WARNING + '[' + 'Warning' + ']' + ShellColors.END ,ShellColors.UNDERLINED + infile.name + ShellColors.END + ': ' + str(*args))
 
 ##############################################################
 #                                                            #
@@ -787,15 +787,15 @@ def add_variable_entity(name):
 
 # Print current scope and its enclosing ones.
 def print_scopes():
-    print(ShellColors.UNDERLINED + 'main scope' + ShellColors.END)
+    print(ShellColors.BOLD + ShellColors.UNDERLINED + 'main scope' + ShellColors.END)
     for scope in scopes:
         level = scope.get_nesting_level() + 1
-        print('    ' * level + str(scope))
+        print('     ' * level + str(scope))
         for entity in scope.get_entities_list():
             print('     ' * level + str(entity))
             if isinstance(entity, Function):
                 for arg in entity.get_arguments_list():
-                    print('     ' * level + '     ' + str(arg))
+                    print('     ' * level + '      ' + str(arg))
     print('\n')
 
 ##############################################################
@@ -1304,7 +1304,7 @@ def term():
 
 
 def factor(): 
-    global token, actual_pars
+    global token
     if token.get_tk_type() is TokenType.NUMBER_TK :
         ret = token.get_tk_value()
         token = lex()
@@ -1316,28 +1316,16 @@ def factor():
         token = lex()
     elif token.get_tk_type() is TokenType.ID_TK:
         ret = token.get_tk_value()
-        error_pars_charno = token.get_tk_charno()
-        error_pars_lineno = token.get_tk_lineno()
         entity = search_entity(ret)
         if  entity is None:
             error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Undefined id \'%s\'.'% ret)
         token=lex()
         tail = idtail()
         if tail is not None:
-            formal_pars = entity.get_arguments_list()
-            # Check if actual parameter number is equal to formal parameters number
-            if len(formal_pars) != len(actual_pars):
-                error_line_message(error_pars_lineno,error_pars_charno,'{} \'{}\' actual parameters do not match formal parameters.' .format(entity.get_entityType(), ret))
-            # Check if actual parameters are identical to formal parameters
-            for arg in range(len(actual_pars)):
-                if actual_pars[arg] != formal_pars[arg].get_parMode():
-                   error_line_message(error_pars_lineno,error_pars_charno,'{} \'{}\' actual parameters do not match formal parameters.' .format(entity.get_entityType(), ret)) 
             function_return = newtemp()
             genquad('par', function_return, 'RET')
             genquad('call', ret)
             ret = function_return
-            # Reset actual_pars list for next subprogram inspection
-            actual_pars = list()
     else: 
         error_line_message(token.get_tk_lineno(),token.get_tk_charno(),'Expected factor but found \'%s\' instead.' % token.get_tk_value())
     return ret
@@ -1392,12 +1380,10 @@ def actualparlist():
 def actualparitem():
     global token
     if token.get_tk_type() is TokenType.IN_TK:
-        actual_pars.append('CV')
         token = lex()
         exp = expression()
         genquad('par', exp, 'CV')
     elif token.get_tk_type() is TokenType.INOUT_TK:
-        actual_pars.append('REF')
         token = lex()
         parameter_id = token.get_tk_value()
         if token.get_tk_type() is not TokenType.ID_TK:
@@ -1439,9 +1425,9 @@ def main(input_filename):
         os.remove(c_equivalent_filepath)
 
     # print quad equivalent code
-    for Quad in quads_list:
+    '''for Quad in quads_list:
         print(Quad)
-    print("Main program framelength: %d" % main_program_framelength)
+    print("Main program framelength: %d" % main_program_framelength)'''
     close_files()
 
 

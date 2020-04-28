@@ -1,10 +1,10 @@
 program test3
 {   
     declare u5;
-	function kappa(inout lalal, in aa)
+	function myfunc(in lalal, in aa)
 	{
 		declare kkk,m, k,u5;
-		function kappa(inout kkk)
+		function randomfunc(in kkk)
 		{
 			declare m,a,u5;
 			{	
@@ -29,10 +29,10 @@ program test3
 		}
 
 		{	
-			kkk := 30;
+			kkk := randomfunc( in randomfunc( in u5) );
 			return kkk
 		}
 	}
 	{print(u5);
-	u5 := kappa(inout u5, in u5)}
+	u5 := myfunc(in myfunc( inout u5, in u5), in u5)}
 }
