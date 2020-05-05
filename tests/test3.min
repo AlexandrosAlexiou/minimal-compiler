@@ -35,5 +35,5 @@ program test3
 		}
 	}
 	{print(u5);
-	u5 := myfunc(in myfunc( inout u5, in u5), in u5)}
+	u5 := myfunc(in myfunc( in u5, in u5), in myfunc( in u5, in u5))}
 }

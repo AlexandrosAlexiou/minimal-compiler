@@ -3,7 +3,10 @@ program test1
 	declare a,k;
 
 	{
-		if(-3<5 or 5>4) then 
+		a := 100;
+		k := a + 10;
+		if(not [-3<5 or not [5>4]]) then 
+			if(not [a<k or not [a>k]]) then 
 			a:=1 
 		else 
 			a:=2;
