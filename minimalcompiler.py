@@ -493,7 +493,7 @@ def gnvlcode(v):
     asm_code_file.write('    addi    $t0, $t0, -%d\n' % entity_to_load.get_offset())
 
 
-# Load constant or data 'v' from memory to register $t(r) r refers to the number of the temporary register. 
+# Load entity 'v' from memory to register $t(r) r refers to the number of the temporary register. 
 def loadvr(v, r):
     if str(v).isdigit(): # constant
         asm_code_file.write('    li    $t%s, %d\n' % (r, v))
@@ -502,7 +502,7 @@ def loadvr(v, r):
         current_nesting_level = scopes[-1].get_nesting_level()
         entity_nesting_level = entity_to_load.get_nesting_level()
         if entity_to_load.get_entityType == 'Variable' and entity_nesting_level == 0:
-            asm_code_file.write('    lw    $t%s, -%d($s0)\n' % (r, entity_to_load.offset))
+            asm_code_file.write('    lw    $t%s, -%d($s0)\n' % (r, entity_to_load.get_offset()))
         elif (entity_to_load.get_entityType() == 'Variable'  and entity_nesting_level == current_nesting_level) or \
             (entity_to_load.get_entityType() == 'Parameter' and entity_nesting_level == current_nesting_level and entity_to_load.get_parMode() == 'in' ) or \
             (entity_to_load.get_entityType() == 'Tempvar'):
@@ -523,6 +523,31 @@ def loadvr(v, r):
             asm_code_file.write('    lw    $t%s, 0($t0)\n' % r)
         else:
             error('loadvr is not used correctly.')
+
+
+# Transfer data of register $t{r} to memory for variable v.
+def storerv(r , v):
+    entity_to_store = search_entity(v)
+    current_nesting_level = scopes[-1].get_nesting_level()
+    entity_nesting_level = entity_to_store.get_nesting_level()
+    if entity_to_store.get_entityType() == 'Variable' and entity_nesting_level == 0:
+        asm_code_file.write('    sw    $t%s, -%d($s0)\n' % (r, entity_to_store.get_offset()))
+    elif (entity_to_store.get_entityType() == 'Variable'  and entity_nesting_level == current_nesting_level) or \
+        (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in'  and entity_nesting_level == current_nesting_level) or \
+        (entity_to_store.get_entityType() == 'Tempvar'):
+        asm_code_file.write('    sw    $t%s, -%d($sp)\n' % (r, entity_to_store.get_offset()))
+    elif entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level == current_nesting_level:
+        asm_code_file.write('    lw    $t0, -%d($sp)\n' % entity_to_store.get_offset())
+    elif (entity_to_store.get_entityType() == 'Variable' and entity_nesting_level < current_nesting_level) or \
+        (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
+        gnvlcode(v)
+        asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
+    elif (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level < current_nesting_level):
+        gnvlcode(v)
+        asm_code_file.write('    lw    $t0, 0(%t0)\n')
+        asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
+    else:
+        error('storevr is not used correctly. Tried to store') 
 
 
 def generate_asm_code_file(quad, name):
