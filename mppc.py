@@ -12,6 +12,8 @@ import string
 
 # For Error, warning and scopes printing
 class ShellColors:
+    def __init__(self):
+        pass
     GREEN = '\033[92m'
     RED = '\033[91m'
     WARNING = "\033[35m"
@@ -479,8 +481,12 @@ def generate_c_code_file():
         elif quad.get_op() == 'retv':
             c_code_file.write('\tL_' + str(quad.get_label()) + ': ' + 'return (' + str(quad.get_x()) + ');\n')
 
-
-# Load in register $t0 the address of the non-local variable 'v'.
+##############################################################
+#                                                            #
+#                   Final code generation                    #
+#                                                            #
+##############################################################
+# Load in register $t0 the address of a non-local variable 'v'.
 def gnvlcode(v):
     entity_to_load = search_entity(v)
     current_nesting_level = scopes[-1].get_nesting_level()
@@ -501,7 +507,7 @@ def loadvr(v, r):
         entity_to_load = search_entity(v)
         current_nesting_level = scopes[-1].get_nesting_level()
         entity_nesting_level = entity_to_load.get_nesting_level()
-        if entity_to_load.get_entityType == 'Variable' and entity_nesting_level == 0:
+        if entity_to_load.get_entityType() == 'Variable' and entity_nesting_level == 0:
             asm_code_file.write('    lw    $t%s, -%d($s0)\n' % (r, entity_to_load.get_offset()))
         elif (entity_to_load.get_entityType() == 'Variable'  and entity_nesting_level == current_nesting_level) or \
             (entity_to_load.get_entityType() == 'Parameter' and entity_nesting_level == current_nesting_level and entity_to_load.get_parMode() == 'in' ) or \
@@ -525,7 +531,7 @@ def loadvr(v, r):
             error('loadvr is not used correctly.')
 
 
-# Transfer data of register $t{r} to memory for variable v.
+# Transfer contents of register $t{r} to memory for variable v.
 def storerv(r , v):
     entity_to_store = search_entity(v)
     current_nesting_level = scopes[-1].get_nesting_level()
@@ -544,12 +550,13 @@ def storerv(r , v):
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     elif (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level < current_nesting_level):
         gnvlcode(v)
-        asm_code_file.write('    lw    $t0, 0(%t0)\n')
+        asm_code_file.write('    lw    $t0, 0($t0)\n')
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     else:
-        error('storevr is not used correctly. Tried to store') 
+        error('storevr is not used correctly.') 
 
 
+# Generate a file containing the final code in assembly targeting the MIPS32 architecture
 def generate_asm_code_file(quad, name):
     asm_code_file.write('\nL_' + str(quad.get_label()) + ':   #' + quad.quad_to_file()+ '\n')
     if quad.get_op() == 'jump':
@@ -883,8 +890,8 @@ def print_scopes():
         for entity in scope.get_entities_list():
             print('     ' * level + str(entity))
             if isinstance(entity, Function):
-                for arg in entity.get_arguments_list():
-                    print('     ' * level + '      ' + str(arg))
+                for argument in entity.get_arguments_list():
+                    print('     ' * level + '      ' + str(argument))
     print('-' * 100 + '\n')
 
 
@@ -939,8 +946,6 @@ def block(name):
     for quad in quads_list[startQuad:]:
         generate_asm_code_file(quad, name)
     scopes.pop()
-
-
 ##############################################################
 ##############################################################
 ##############################################################
