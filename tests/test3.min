@@ -1,6 +1,6 @@
 program test3
 {   
-    declare u5;
+    declare u5,kk;
 	function myfunc(in lalal, in aa)
 	{
 		declare kkk,m, k,u5;
@@ -35,5 +35,5 @@ program test3
 		}
 	}
 	{print(u5);
-	u5 := myfunc(in myfunc( in u5, in u5), in myfunc( in u5, in u5))}
+	u5 := myfunc(in u5, in kk)}
 }

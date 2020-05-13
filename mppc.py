@@ -14,6 +14,7 @@ import string
 class ShellColors:
     def __init__(self):
         pass
+
     GREEN = '\033[92m'
     RED = '\033[91m'
     WARNING = "\033[35m"
@@ -177,7 +178,7 @@ class Quad:
 
 
 class Scope:
-    def __init__(self, nestinglevel = 0, enclosing_scope=None):
+    def __init__(self, nestinglevel=0, enclosing_scope=None):
         self.__entities_list = list()
         self.__nesting_level = nestinglevel
         self.__current_offset = 12
@@ -267,7 +268,7 @@ class Variable(Entity):
 
 
 class Function(Entity):
-    def __init__(self, name, startQuad = -1):
+    def __init__(self, name, startQuad=-1):
         super().__init__(name, 'Function')
         self.__startQuad = startQuad
         self.__arguments_list = list()
@@ -347,9 +348,11 @@ token = Token()  # Each token returned from the lexical analyzer will be stored 
 infile = ''  # input file pointer
 int_file = ''  # intermediate code file
 c_code_file = ''  # intermediate code to C equivalent file
-asm_code_file = '' # assembly final code file
+asm_code_file = ''  # assembly final code file
 main_program_name = ''  # main program name to generate halt quad
+main_program_start_label = ''  # used to generate the jump to main in the assembly file
 quads_list = list()  # Program equivalent in quadruples.
+actual_pars = list()  # subprogram parameters for error checking
 scopes = list()  # Program current scopes
 nextlabel = 0  # next quad label that is going to be created
 variables_to_declare = list()  # all variable names used c equivalent file to declare all the variables of the program.
@@ -463,8 +466,9 @@ def generate_c_code_file():
                 c_operator = '=='
             elif c_operator == '<>':
                 c_operator = '!='
-            c_code_file.write('\tL_' + str(quad.get_label()) + ': ' + 'if(' + str(quad.get_x()) + c_operator + ' ' + str(
-                quad.get_y()) + ') goto L_' + str(quad.get_z()) + ';\n')
+            c_code_file.write(
+                '\tL_' + str(quad.get_label()) + ': ' + 'if(' + str(quad.get_x()) + c_operator + ' ' + str(
+                    quad.get_y()) + ') goto L_' + str(quad.get_z()) + ';\n')
         elif quad.get_op() in ('+', '-', '/', '*'):
             c_code_file.write(
                 '\tL_' + str(quad.get_label()) + ': ' + str(quad.get_z()) + '=' + str(quad.get_x()) + ' ' + str(
@@ -481,6 +485,7 @@ def generate_c_code_file():
         elif quad.get_op() == 'retv':
             c_code_file.write('\tL_' + str(quad.get_label()) + ': ' + 'return (' + str(quad.get_x()) + ');\n')
 
+
 ##############################################################
 #                                                            #
 #                   Final code generation                    #
@@ -490,7 +495,7 @@ def generate_c_code_file():
 def gnvlcode(v):
     entity_to_load = search_entity(v)
     current_nesting_level = scopes[-1].get_nesting_level()
-    entity_nesting_level = entity_to_load.get_nesting_level()
+    entity_nesting_level = get_entity_nesting_level(entity_to_load.get_name())
     asm_code_file.write('    lw    $t0, -4($sp)\n')
     access_link = current_nesting_level - entity_nesting_level - 1
     while access_link:
@@ -501,25 +506,27 @@ def gnvlcode(v):
 
 # Load entity 'v' from memory to register $t(r) r refers to the number of the temporary register. 
 def loadvr(v, r):
-    if str(v).isdigit(): # constant
-        asm_code_file.write('    li    $t%s, %d\n' % (r, v))
-    else: # data
+    if str(v).isdigit():  # constant
+        asm_code_file.write('    li    $t%s, %s\n' % (r, v))
+    else:  # data
         entity_to_load = search_entity(v)
         current_nesting_level = scopes[-1].get_nesting_level()
-        entity_nesting_level = entity_to_load.get_nesting_level()
+        entity_nesting_level = get_entity_nesting_level(entity_to_load.get_name())
         if entity_to_load.get_entityType() == 'Variable' and entity_nesting_level == 0:
             asm_code_file.write('    lw    $t%s, -%d($s0)\n' % (r, entity_to_load.get_offset()))
-        elif (entity_to_load.get_entityType() == 'Variable'  and entity_nesting_level == current_nesting_level) or \
-            (entity_to_load.get_entityType() == 'Parameter' and entity_nesting_level == current_nesting_level and entity_to_load.get_parMode() == 'in' ) or \
-            (entity_to_load.get_entityType() == 'Tempvar'):
+        elif (entity_to_load.get_entityType() == 'Variable' and entity_nesting_level == current_nesting_level) or \
+                (
+                        entity_to_load.get_entityType() == 'Parameter' and entity_nesting_level == current_nesting_level and entity_to_load.get_parMode() == 'in') or \
+                (entity_to_load.get_entityType() == 'Tempvar'):
             asm_code_file.write('    lw    $t%s, -%d($sp)\n' % (r, entity_to_load.get_offset()))
         elif entity_to_load.get_entityType() == 'Parameter' and \
-            entity_to_load.get_parMode() == 'inout' and \
-            entity_nesting_level == current_nesting_level:
+                entity_to_load.get_parMode() == 'inout' and \
+                entity_nesting_level == current_nesting_level:
             asm_code_file.write('    lw    $t0, -%d($sp)\n' % entity_to_load.get_offset())
             asm_code_file.write('    lw    $t%s, 0($t0)\n' % r)
         elif (entity_to_load.get_entityType() == 'Variable' and entity_nesting_level < current_nesting_level) or \
-            (entity_to_load.get_entityType() == 'Parameter' and entity_to_load.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
+                (
+                        entity_to_load.get_entityType() == 'Parameter' and entity_to_load.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
             gnvlcode(v)
             asm_code_file.write('    lw    $t%s, 0($t0)\n' % r)
         elif entity_to_load.get_entityType() == 'Parameter' and entity_to_load.get_parMode() == 'inout' \
@@ -532,35 +539,163 @@ def loadvr(v, r):
 
 
 # Transfer contents of register $t{r} to memory for variable v.
-def storerv(r , v):
+def storerv(r, v):
     entity_to_store = search_entity(v)
     current_nesting_level = scopes[-1].get_nesting_level()
-    entity_nesting_level = entity_to_store.get_nesting_level()
+    entity_nesting_level = get_entity_nesting_level(entity_to_store.get_name())
     if entity_to_store.get_entityType() == 'Variable' and entity_nesting_level == 0:
         asm_code_file.write('    sw    $t%s, -%d($s0)\n' % (r, entity_to_store.get_offset()))
-    elif (entity_to_store.get_entityType() == 'Variable'  and entity_nesting_level == current_nesting_level) or \
-        (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in'  and entity_nesting_level == current_nesting_level) or \
-        (entity_to_store.get_entityType() == 'Tempvar'):
+    elif (entity_to_store.get_entityType() == 'Variable' and entity_nesting_level == current_nesting_level) or \
+            (
+                    entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level == current_nesting_level) or \
+            (entity_to_store.get_entityType() == 'Tempvar'):
         asm_code_file.write('    sw    $t%s, -%d($sp)\n' % (r, entity_to_store.get_offset()))
     elif entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level == current_nesting_level:
         asm_code_file.write('    lw    $t0, -%d($sp)\n' % entity_to_store.get_offset())
     elif (entity_to_store.get_entityType() == 'Variable' and entity_nesting_level < current_nesting_level) or \
-        (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
+            (
+                    entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
         gnvlcode(v)
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
-    elif (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level < current_nesting_level):
+    elif entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level < current_nesting_level:
         gnvlcode(v)
         asm_code_file.write('    lw    $t0, 0($t0)\n')
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     else:
-        error('storevr is not used correctly.') 
+        error('storevr is not used correctly.')
 
 
 # Generate a file containing the final code in assembly targeting the MIPS32 architecture
 def generate_asm_code_file(quad, name):
-    asm_code_file.write('\nL_' + str(quad.get_label()) + ':   #' + quad.quad_to_file()+ '\n')
+    if str(quad.get_label()) == '0':
+        # make a blank line to add the jump to main label later
+        asm_code_file.write(' ' * 20)
+    relational_operators = ['=', '<>', '<', '<=', '>', '>=']
+    asm_relational_operators_instructions = ['beq', 'bne', 'blt', 'ble', 'bgt', 'bge']
+    arithmetic_operators = ['+', '-', '/', '*']
+    asm_arithmetic_operators_instructions = ['add', 'sub', 'div', 'mul']
+    asm_code_file.write('\nL_' + str(quad.get_label()) + ':\n')
     if quad.get_op() == 'jump':
         asm_code_file.write('    j    L_%d\n' % quad.get_z())
+    elif quad.get_op() in relational_operators:
+        loadvr(quad.get_x(), '1')
+        loadvr(quad.get_y(), '2')
+        asm_code_file.write('   %s    $t1, $t2, L_%s\n'
+                            % (asm_relational_operators_instructions[relational_operators.index(quad.get_op())],
+                               quad.get_z()))
+    elif quad.get_op() in arithmetic_operators:
+        loadvr(quad.get_x(), '1')
+        loadvr(quad.get_y(), '2')
+        asm_code_file.write('   %s    $t1, $t1, $t2\n'
+                            % (asm_arithmetic_operators_instructions[arithmetic_operators.index(quad.get_op())]))
+        storerv('1', quad.get_z())
+    elif quad.get_op() == ':=':
+        loadvr(quad.get_x(), '1')
+        storerv('1', quad.get_z())
+    elif quad.get_op() == 'halt':
+        asm_code_file.write('    li    $v0, 10\n')
+        asm_code_file.write('    syscall\n')
+    elif quad.get_op() == 'out':
+        loadvr(quad.get_x(), '3')
+        asm_code_file.write('    li    $v0, 1\n')
+        asm_code_file.write('    move  $a0, $t3\n')
+        asm_code_file.write('    syscall\n')
+    elif quad.get_op() == 'inp':
+        asm_code_file.write('    li    $v0, 5\n')
+        asm_code_file.write('    syscall\n')
+        asm_code_file.write('    move $t0, $v0\n')
+        storerv('0', quad.get_x())
+    elif quad.get_op() == 'retv':
+        loadvr(quad.get_x(), '1')
+        asm_code_file.write('    lw    $t0, -8($sp)\n')
+        asm_code_file.write('    sw    $t1, 0($t0)\n')
+        asm_code_file.write('    lw    $ra, 0($sp)\n')
+        asm_code_file.write('    jr    $ra\n')
+    elif quad.get_op() == 'par':
+        if name != main_program_name:
+            caller, caller_nesting_level = search_entity_by_type(name, 'Function')
+            framelength = caller.get_framelength()
+        else:
+            caller_nesting_level = 0
+            framelength = main_program_framelength
+        if not actual_pars:
+            asm_code_file.write('    addi    $fp, $sp, -%d\n' % framelength)
+        actual_pars.append(quad)
+        parameter_offset = 12 + 4 * actual_pars.index(quad)
+        if quad.get_y() == 'CV':
+            loadvr(quad.get_x(), '0')
+            asm_code_file.write('    sw    $t0, -%d($fp)\n' % parameter_offset)
+        elif quad.get_y() == 'REF':
+            variable = search_entity(quad.get_x())
+            variable_nesting_level = get_entity_nesting_level(quad.get_x())
+            if caller_nesting_level == variable_nesting_level:
+                if variable.get_entityType() == 'Variable' or \
+                        (variable.get_entityType() == 'Parameter' and variable.get_parMode() == 'in'):
+                    asm_code_file.write('    addi    $t0, $sp, -%d\n' % variable.get_offset())
+                    asm_code_file.write('    sw    $t0, -%d($fp)\n' % parameter_offset)
+                elif variable.get_entityType() == 'Parameter' and variable.get_parMode() == 'inout':
+                    asm_code_file.write('    lw    $t0, -%d($sp)\n' % variable.get_offset())
+                    asm_code_file.write('    sw    $t0, -%d($fp)\n' % parameter_offset)
+            else:
+                if variable.get_entityType() == 'Variable' or \
+                        (variable.get_entityType() == 'Parameter' and variable.get_parMode() == 'in'):
+                    gnvlcode(quad.get_x())
+                    asm_code_file.write('    sw    $t0, -%d($fp)\n' % parameter_offset)
+                elif variable.get_entityType() == 'Parameter' and variable.get_parMode() == 'inout':
+                    gnvlcode(quad.get_x())
+                    asm_code_file.write('    lw    $t0, 0($t0)\n')
+                    asm_code_file.write('    sw    $t0, -%d($fp)\n' % parameter_offset)
+        elif quad.get_y() == 'RET':
+            variable = search_entity(quad.get_x())
+            variable_nesting_level = get_entity_nesting_level(quad.get_x())
+            asm_code_file.write('    addi    $t0, $sp, -%d\n' % variable.get_offset())
+            asm_code_file.write('    sw    $t0, -8($fp)\n')
+    elif quad.get_op() == 'call':
+        if name != main_program_name:
+            caller = search_entity(name)
+            caller_nesting_level = get_entity_nesting_level(name)
+            framelength = caller.get_framelength()
+        else:
+            caller_nesting_level = 0
+            framelength = main_program_framelength
+        to_call = search_entity(quad.get_x())
+        to_call_nesting_level = get_entity_nesting_level(quad.get_x())
+        if actual_pars[-1].get_y() == 'RET':
+            actual_pars.pop()
+        if len(to_call.get_arguments_list()) != len(actual_pars):
+            print(len(to_call.get_arguments_list()), len(actual_pars))
+            error('Subprogram \'%s\' parameter number is not matching definition' % to_call.get_name())
+        for argument in to_call.get_arguments_list():
+            quad = actual_pars.pop(0)
+            if argument.get_parMode() != quad.get_y():
+                if quad.get_x() == 'CV':
+                    expected_mode = 'inout'
+                else:
+                    expected_mode = 'in'
+                error('Subprogram: \'%s\'. Expected parameter \'%s\' mode to be \'%s\''
+                      %(to_call.get_name(), quad.get_x(), expected_mode))
+        if caller_nesting_level == to_call_nesting_level:
+            asm_code_file.write('    lw    $t0, -4($sp)\n')
+            asm_code_file.write('    sw    $t0, -4($fp)\n')
+        else:
+            asm_code_file.write('    sw    $sp, -4($fp)\n')
+        asm_code_file.write('    addi    $sp, $sp, %d\n' % framelength)
+        asm_code_file.write('    jal     L_%d\n' % to_call.get_startQuad())
+        asm_code_file.write('    addi    $sp, $sp, -%d\n' % framelength)
+    elif quad.get_op() == 'begin_block':
+        asm_code_file.write('    sw    $ra, 0($sp)\n')
+        if name == main_program_name:
+            asm_code_file.seek(0)
+            asm_code_file.write('    j    L_%d\n' % quad.get_label())
+            asm_code_file.seek(0, 2)
+            asm_code_file.write('    addi  $sp, $sp, %d\n' % main_program_framelength)
+            asm_code_file.write('    move  $s0, $sp\n')
+    elif quad.get_op() == 'end_block':
+        if name == main_program_name:
+            asm_code_file.write('    j    L_%d\n' % halt_label)
+        else:
+            asm_code_file.write('    lw    $ra, 0($sp)\n')
+            asm_code_file.write('    jr    $ra\n')
 
 
 ##############################################################
@@ -789,11 +924,11 @@ def backpatch(label_list, z):
 #                   Symbol table functions                   #
 #                                                            #
 ##############################################################
-def is_declared(name, entityType, nesting_level):
+def is_declared(name, entity_type, nesting_level):
     scope = scopes[nesting_level]
     for i in range(len(scope.get_entities_list())):
         entity1 = scope.get_entities_list()[i]
-        if entity1.get_name() == name and entity1.get_entityType() == entityType:
+        if entity1.get_name() == name and entity1.get_entityType() == entity_type:
             return True
     return False
 
@@ -817,6 +952,28 @@ def search_entity(entity_name):
         current_scope = current_scope.get_enclosing_scope()
 
 
+def get_entity_nesting_level(entity_name):
+    if not scopes:
+        return
+    current_scope = scopes[-1]
+    while current_scope is not None:  # search until global scope
+        for entity in current_scope.get_entities_list():
+            if entity.get_name() == entity_name:
+                return current_scope.get_nesting_level()
+        current_scope = current_scope.get_enclosing_scope()
+
+
+def search_entity_by_type(entity_name, entity_type):
+    if not scopes:
+        return
+    current_scope = scopes[-1]
+    while current_scope is not None:  # search until global scope
+        for entity in current_scope.get_entities_list():
+            if entity.get_name() == entity_name and entity.get_entityType() == entity_type:
+                return entity, current_scope.get_nesting_level()
+        current_scope = current_scope.get_enclosing_scope()
+
+
 def add_new_scope():
     if not scopes:  # if scopes list is empty then add the main scope
         current_scope = Scope()
@@ -836,9 +993,10 @@ def add_function_entity(name):
 
 
 def update_function_startQuad(name):
-    global main_program_name
+    global main_program_name, main_program_start_label
     startQuad = nextquad()
     if name == main_program_name:
+        main_program_start_label = startQuad
         return startQuad
     scopes[-2].get_entities_list()[-1].set_start_quad(startQuad)
     return startQuad
@@ -930,12 +1088,12 @@ def program():
 ######################## Main block ##########################
 ##############################################################
 def block(name):
-    global scopes, main_program_name
-    print_scopes()
+    global scopes, main_program_name, halt_label
+    #print_scopes()
     declarations()
     subprograms()
-    genquad('begin_block', name)
     startQuad = update_function_startQuad(name)
+    genquad('begin_block', name)
     statements()
     if name == main_program_name:
         halt_label = nextquad()
@@ -946,6 +1104,8 @@ def block(name):
     for quad in quads_list[startQuad:]:
         generate_asm_code_file(quad, name)
     scopes.pop()
+
+
 ##############################################################
 ##############################################################
 ##############################################################

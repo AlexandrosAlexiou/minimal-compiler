@@ -1,166 +1,209 @@
+    j    L_38
+      
+L_0:
+    sw    $ra, 0($sp)
 
-L_1:   #1: -, 0, 3, T_1
+L_1:
+    li    $t1, 0
+    li    $t2, 3
+   sub    $t1, $t1, $t2
+    sw    $t1, -28($sp)
 
+L_2:
+    lw    $t1, -28($sp)
+    li    $t2, 5
+   blt    $t1, $t2, L_6
 
-L_2:   #2: <, T_1, 5, 6
-
-
-L_3:   #3: jump, _, _, 4
-
+L_3:
     j    L_4
 
-L_4:   #4: >, 5, 4, 6
+L_4:
+    li    $t1, 5
+    li    $t2, 4
+   bgt    $t1, $t2, L_6
 
-
-L_5:   #5: jump, _, _, 8
-
+L_5:
     j    L_8
 
-L_6:   #6: :=, 3, _, a
+L_6:
+    li    $t1, 3
+    sw    $t1, -20($sp)
 
-
-L_7:   #7: jump, _, _, 9
-
+L_7:
     j    L_9
 
-L_8:   #8: :=, 4, _, a
+L_8:
+    li    $t1, 4
+    sw    $t1, -20($sp)
 
+L_9:
+    li    $t1, 1000
+    li    $t2, 300
+   bgt    $t1, $t2, L_11
 
-L_9:   #9: >, 1000, 300, 11
-
-
-L_10:   #10: jump, _, _, 15
-
+L_10:
     j    L_15
 
-L_11:   #11: <, 10, 100, 13
+L_11:
+    li    $t1, 10
+    li    $t2, 100
+   blt    $t1, $t2, L_13
 
-
-L_12:   #12: jump, _, _, 15
-
+L_12:
     j    L_15
 
-L_13:   #13: :=, 3, _, a
+L_13:
+    li    $t1, 3
+    sw    $t1, -20($sp)
 
-
-L_14:   #14: jump, _, _, 16
-
+L_14:
     j    L_16
 
-L_15:   #15: :=, 555, _, a
+L_15:
+    li    $t1, 555
+    sw    $t1, -20($sp)
 
+L_16:
+    li    $t1, 5
+    li    $t2, 3
+   bgt    $t1, $t2, L_18
 
-L_16:   #16: >, 5, 3, 18
-
-
-L_17:   #17: jump, _, _, 21
-
+L_17:
     j    L_21
 
-L_18:   #18: -, a, 3, T_2
+L_18:
+    lw    $t1, -20($sp)
+    li    $t2, 3
+   sub    $t1, $t1, $t2
+    sw    $t1, -32($sp)
 
+L_19:
+    lw    $t1, -32($sp)
+    sw    $t1, -20($sp)
 
-L_19:   #19: :=, T_2, _, a
-
-
-L_20:   #20: jump, _, _, 16
-
+L_20:
     j    L_16
 
-L_21:   #21: >, k, 30, 23
+L_21:
+    lw    $t0, -4($sp)
+    addi    $t0, $t0, -28
+    lw    $t1, 0($t0)
+    li    $t2, 30
+   bgt    $t1, $t2, L_23
 
-
-L_22:   #22: jump, _, _, 26
-
+L_22:
     j    L_26
 
-L_23:   #23: -, a, 100, T_3
+L_23:
+    lw    $t1, -20($sp)
+    li    $t2, 100
+   sub    $t1, $t1, $t2
+    sw    $t1, -36($sp)
 
+L_24:
+    lw    $t1, -36($sp)
+    sw    $t1, -20($sp)
 
-L_24:   #24: :=, T_3, _, a
-
-
-L_25:   #25: jump, _, _, 21
-
+L_25:
     j    L_21
 
-L_26:   #26: retv, m, _, _
+L_26:
+    lw    $t1, -16($sp)
+    lw    $t0, -8($sp)
+    sw    $t1, 0($t0)
+    lw    $ra, 0($sp)
+    jr    $ra
 
+L_27:
+    lw    $ra, 0($sp)
+    jr    $ra
 
-L_27:   #27: end_block, randomfunc, _, _
+L_28:
+    sw    $ra, 0($sp)
 
+L_29:
+    addi    $fp, $sp, -44
+    lw    $t0, -32($sp)
+    sw    $t0, -12($fp)
 
-L_29:   #29: par, u5, CV, _
+L_30:
+    addi    $t0, $sp, -36
+    sw    $t0, -8($fp)
 
+L_31:
+    sw    $sp, -4($fp)
+    addi    $sp, $sp, 44
+    jal     L_0
+    addi    $sp, $sp, -44
 
-L_30:   #30: par, T_4, RET, _
+L_32:
+    addi    $fp, $sp, -44
+    lw    $t0, -36($sp)
+    sw    $t0, -12($fp)
 
+L_33:
+    addi    $t0, $sp, -40
+    sw    $t0, -8($fp)
 
-L_31:   #31: call, randomfunc, _, _
+L_34:
+    sw    $sp, -4($fp)
+    addi    $sp, $sp, 44
+    jal     L_0
+    addi    $sp, $sp, -44
 
+L_35:
+    lw    $t1, -40($sp)
+    sw    $t1, -20($sp)
 
-L_32:   #32: par, T_4, CV, _
+L_36:
+    lw    $t1, -20($sp)
+    lw    $t0, -8($sp)
+    sw    $t1, 0($t0)
+    lw    $ra, 0($sp)
+    jr    $ra
 
+L_37:
+    lw    $ra, 0($sp)
+    jr    $ra
 
-L_33:   #33: par, T_5, RET, _
+L_38:
+    sw    $ra, 0($sp)
+    addi  $sp, $sp, 24
+    move  $s0, $sp
 
+L_39:
+    lw    $t3, -12($s0)
+    li    $v0, 1
+    move  $a0, $t3
+    syscall
 
-L_34:   #34: call, randomfunc, _, _
+L_40:
+    addi    $fp, $sp, -24
+    lw    $t0, -12($s0)
+    sw    $t0, -12($fp)
 
+L_41:
+    lw    $t0, -16($s0)
+    sw    $t0, -16($fp)
 
-L_35:   #35: :=, T_5, _, kkk
+L_42:
+    addi    $t0, $sp, -20
+    sw    $t0, -8($fp)
 
+L_43:
+    lw    $t0, -4($sp)
+    sw    $t0, -4($fp)
+    addi    $sp, $sp, 24
+    jal     L_28
+    addi    $sp, $sp, -24
 
-L_36:   #36: retv, kkk, _, _
+L_44:
+    lw    $t1, -20($sp)
+    sw    $t1, -12($s0)
 
+L_45:
+    li    $v0, 10
+    syscall
 
-L_37:   #37: end_block, myfunc, _, _
-
-
-L_39:   #39: out, u5, _, _
-
-
-L_40:   #40: par, u5, CV, _
-
-
-L_41:   #41: par, u5, CV, _
-
-
-L_42:   #42: par, T_6, RET, _
-
-
-L_43:   #43: call, myfunc, _, _
-
-
-L_44:   #44: par, T_6, CV, _
-
-
-L_45:   #45: par, u5, CV, _
-
-
-L_46:   #46: par, u5, CV, _
-
-
-L_47:   #47: par, T_7, RET, _
-
-
-L_48:   #48: call, myfunc, _, _
-
-
-L_49:   #49: par, T_7, CV, _
-
-
-L_50:   #50: par, T_8, RET, _
-
-
-L_51:   #51: call, myfunc, _, _
-
-
-L_52:   #52: :=, T_8, _, u5
-
-
-L_53:   #53: halt, _, _, _
-
-
-L_54:   #54: end_block, test3, _, _
-
+L_46:
+    j    L_45
