@@ -168,42 +168,36 @@ L_37:
 
 L_38:
     sw    $ra, 0($sp)
-    addi  $sp, $sp, 24
+    addi  $sp, $sp, 36
     move  $s0, $sp
 
 L_39:
-    lw    $t3, -12($s0)
-    li    $v0, 1
-    move  $a0, $t3
-    syscall
-
-L_40:
-    addi    $fp, $sp, -24
+    addi    $fp, $sp, -36
     lw    $t0, -12($s0)
     sw    $t0, -12($fp)
 
-L_41:
+L_40:
     lw    $t0, -16($s0)
     sw    $t0, -16($fp)
 
-L_42:
-    addi    $t0, $sp, -20
+L_41:
+    addi    $t0, $sp, -32
     sw    $t0, -8($fp)
 
-L_43:
+L_42:
     lw    $t0, -4($sp)
     sw    $t0, -4($fp)
-    addi    $sp, $sp, 24
+    addi    $sp, $sp, 36
     jal     L_28
-    addi    $sp, $sp, -24
+    addi    $sp, $sp, -36
+
+L_43:
+    lw    $t1, -32($sp)
+    sw    $t1, -28($s0)
 
 L_44:
-    lw    $t1, -20($sp)
-    sw    $t1, -12($s0)
-
-L_45:
     li    $v0, 10
     syscall
 
-L_46:
-    j    L_45
+L_45:
+    j    L_44

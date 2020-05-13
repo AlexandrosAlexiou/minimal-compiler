@@ -498,9 +498,10 @@ def gnvlcode(v):
     entity_nesting_level = get_entity_nesting_level(entity_to_load.get_name())
     asm_code_file.write('    lw    $t0, -4($sp)\n')
     access_link = current_nesting_level - entity_nesting_level - 1
-    while access_link:
+    while access_link > 0:
         asm_code_file.write('    lw    $t0, -4($t0)\n')
         access_link -= 1
+        print("GIA PANTA")
     asm_code_file.write('    addi    $t0, $t0, -%d\n' % entity_to_load.get_offset())
 
 
@@ -663,7 +664,7 @@ def generate_asm_code_file(quad, name):
         if actual_pars[-1].get_y() == 'RET':
             actual_pars.pop()
         if len(to_call.get_arguments_list()) != len(actual_pars):
-            print(len(to_call.get_arguments_list()), len(actual_pars))
+            # print(len(to_call.get_arguments_list()), len(actual_pars))
             error('Subprogram \'%s\' parameter number is not matching definition' % to_call.get_name())
         for argument in to_call.get_arguments_list():
             quad = actual_pars.pop(0)
@@ -673,7 +674,7 @@ def generate_asm_code_file(quad, name):
                 else:
                     expected_mode = 'in'
                 error('Subprogram: \'%s\'. Expected parameter \'%s\' mode to be \'%s\''
-                      %(to_call.get_name(), quad.get_x(), expected_mode))
+                      % (to_call.get_name(), quad.get_x(), expected_mode))
         if caller_nesting_level == to_call_nesting_level:
             asm_code_file.write('    lw    $t0, -4($sp)\n')
             asm_code_file.write('    sw    $t0, -4($fp)\n')
@@ -1740,8 +1741,8 @@ def main(input_filename):
 
     # print quad equivalent code
     '''for Quad in quads_list:
-        print(Quad)
-    print("Main program framelength: %d" % main_program_framelength)'''
+        print(Quad)'''
+    print("Main program framelength: %d" % main_program_framelength)
     close_files()
 
 
