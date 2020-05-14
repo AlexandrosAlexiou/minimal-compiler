@@ -587,11 +587,8 @@ def generate_asm_code_file(quad, name):
                             % (asm_arithmetic_operators_instructions[arithmetic_operators.index(quad.get_op())]))
         storerv('1', quad.get_z())
     elif quad.get_op() == ':=':
-        print("ASSIGN")
-        print('Label: ' + str(quad.get_label()))
         loadvr(quad.get_x(), '1')
         storerv('1', quad.get_z())
-        print("ASSIGN END\n")
     elif quad.get_op() == 'halt':
         asm_code_file.write('    li    $v0, 10\n')
         asm_code_file.write('    syscall\n')
