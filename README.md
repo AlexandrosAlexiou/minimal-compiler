@@ -8,4 +8,4 @@
 Python(v3.7.4) 
 
 ## Execution
-Run: `./minimalcompiler.py`
+Run: `./mppc.py`
