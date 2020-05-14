@@ -501,7 +501,6 @@ def gnvlcode(v):
     while access_link > 0:
         asm_code_file.write('    lw    $t0, -4($t0)\n')
         access_link -= 1
-        print("GIA PANTA")
     asm_code_file.write('    addi    $t0, $t0, -%d\n' % entity_to_load.get_offset())
 
 
@@ -516,8 +515,7 @@ def loadvr(v, r):
         if entity_to_load.get_entityType() == 'Variable' and entity_nesting_level == 0:
             asm_code_file.write('    lw    $t%s, -%d($s0)\n' % (r, entity_to_load.get_offset()))
         elif (entity_to_load.get_entityType() == 'Variable' and entity_nesting_level == current_nesting_level) or \
-                (
-                        entity_to_load.get_entityType() == 'Parameter' and entity_nesting_level == current_nesting_level and entity_to_load.get_parMode() == 'in') or \
+                (entity_to_load.get_entityType() == 'Parameter' and entity_nesting_level == current_nesting_level and entity_to_load.get_parMode() == 'in') or \
                 (entity_to_load.get_entityType() == 'Tempvar'):
             asm_code_file.write('    lw    $t%s, -%d($sp)\n' % (r, entity_to_load.get_offset()))
         elif entity_to_load.get_entityType() == 'Parameter' and \
@@ -526,14 +524,13 @@ def loadvr(v, r):
             asm_code_file.write('    lw    $t0, -%d($sp)\n' % entity_to_load.get_offset())
             asm_code_file.write('    lw    $t%s, 0($t0)\n' % r)
         elif (entity_to_load.get_entityType() == 'Variable' and entity_nesting_level < current_nesting_level) or \
-                (
-                        entity_to_load.get_entityType() == 'Parameter' and entity_to_load.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
+                (entity_to_load.get_entityType() == 'Parameter' and entity_to_load.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
             gnvlcode(v)
             asm_code_file.write('    lw    $t%s, 0($t0)\n' % r)
         elif entity_to_load.get_entityType() == 'Parameter' and entity_to_load.get_parMode() == 'inout' \
                 and entity_nesting_level < current_nesting_level:
             gnvlcode(v)
-            asm_code_file.write('    lw    $t0, 0($t0)\n')
+            asm_code_file.write('    lw    $t0, 0(%t0)\n')
             asm_code_file.write('    lw    $t%s, 0($t0)\n' % r)
         else:
             error('loadvr is not used correctly.')
@@ -547,23 +544,22 @@ def storerv(r, v):
     if entity_to_store.get_entityType() == 'Variable' and entity_nesting_level == 0:
         asm_code_file.write('    sw    $t%s, -%d($s0)\n' % (r, entity_to_store.get_offset()))
     elif (entity_to_store.get_entityType() == 'Variable' and entity_nesting_level == current_nesting_level) or \
-            (
-                    entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level == current_nesting_level) or \
+            (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level == current_nesting_level) or \
             (entity_to_store.get_entityType() == 'Tempvar'):
         asm_code_file.write('    sw    $t%s, -%d($sp)\n' % (r, entity_to_store.get_offset()))
     elif entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level == current_nesting_level:
         asm_code_file.write('    lw    $t0, -%d($sp)\n' % entity_to_store.get_offset())
+        asm_code_file.write('    sw    $t%s, 0($t0)\n' %r)
     elif (entity_to_store.get_entityType() == 'Variable' and entity_nesting_level < current_nesting_level) or \
-            (
-                    entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
+            (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
         gnvlcode(v)
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     elif entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level < current_nesting_level:
         gnvlcode(v)
-        asm_code_file.write('    lw    $t0, 0($t0)\n')
+        asm_code_file.write('    lw    $t0, 0(%t0)\n')
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     else:
-        error('storevr is not used correctly.')
+        error('storerv is not used correctly.')
 
 
 # Generate a file containing the final code in assembly targeting the MIPS32 architecture
@@ -591,15 +587,18 @@ def generate_asm_code_file(quad, name):
                             % (asm_arithmetic_operators_instructions[arithmetic_operators.index(quad.get_op())]))
         storerv('1', quad.get_z())
     elif quad.get_op() == ':=':
+        print("ASSIGN")
+        print('Label: ' + str(quad.get_label()))
         loadvr(quad.get_x(), '1')
         storerv('1', quad.get_z())
+        print("ASSIGN END\n")
     elif quad.get_op() == 'halt':
         asm_code_file.write('    li    $v0, 10\n')
         asm_code_file.write('    syscall\n')
     elif quad.get_op() == 'out':
-        loadvr(quad.get_x(), '3')
+        loadvr(quad.get_x(), '9')
         asm_code_file.write('    li    $v0, 1\n')
-        asm_code_file.write('    move  $a0, $t3\n')
+        asm_code_file.write('    move  $a0, $t9\n')
         asm_code_file.write('    syscall\n')
     elif quad.get_op() == 'inp':
         asm_code_file.write('    li    $v0, 5\n')
@@ -610,8 +609,6 @@ def generate_asm_code_file(quad, name):
         loadvr(quad.get_x(), '1')
         asm_code_file.write('    lw    $t0, -8($sp)\n')
         asm_code_file.write('    sw    $t1, 0($t0)\n')
-        asm_code_file.write('    lw    $ra, 0($sp)\n')
-        asm_code_file.write('    jr    $ra\n')
     elif quad.get_op() == 'par':
         if name != main_program_name:
             caller, caller_nesting_level = search_entity_by_type(name, 'Function')
@@ -620,7 +617,7 @@ def generate_asm_code_file(quad, name):
             caller_nesting_level = 0
             framelength = main_program_framelength
         if not actual_pars:
-            asm_code_file.write('    addi    $fp, $sp, -%d\n' % framelength)
+            asm_code_file.write('    addi    $fp, $sp, %d\n' % framelength)
         actual_pars.append(quad)
         parameter_offset = 12 + 4 * actual_pars.index(quad)
         if quad.get_y() == 'CV':

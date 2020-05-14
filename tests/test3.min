@@ -1,39 +1,20 @@
-program test3
-{   
-    declare a1, a2, a3, a4, u5;
-	function myfunc(in lalal, in aa)
+program main
+{ 
+    declare a, b, c;
+	function f(in a, inout b)
 	{
-		declare kkk,m, k,u5;
-		function randomfunc(in kkk)
+		declare;
 		{
-			declare m,a;
-			declare u5;
-			{	
-				if(-3<5 or 5>4) then 
-					a:=3 
-				else 
-					a:=4;
-
-				if( 1000 > 300 and 10<100) then 
-					a:= 3
-				else 
-					a := 555;
-
-				while(5>3) 
-					a := a-3;
-
-				while(k>30) 
-					a := a-100;
-				
-				return m
-			}
-		}
-
-		{	
-			kkk := randomfunc( in randomfunc( in u5) );
-			return kkk
+			b := a + 1;
+			c:= 4;
+			return b
 		}
 	}
 
-	 u5 := myfunc( in a1, in a2 )
+	{
+		a := 1;
+		c := f(in a, inout b);
+		print(c);
+		print(b)
+	}
 }
