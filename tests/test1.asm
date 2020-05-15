@@ -129,6 +129,7 @@ L_30:
     move $t0, $v0
     addi    $a0, $0, 0xA
     addi    $v0, $0, 0xB
+    syscall
     sw    $t0, -12($s0)
 
 L_31:

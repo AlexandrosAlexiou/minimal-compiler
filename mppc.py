@@ -608,6 +608,7 @@ def generate_asm_code_file(quad, name):
         # print new line after integer out
         asm_code_file.write('    addi    $a0, $0, 0xA\n') # ascii code for LF
         asm_code_file.write('    addi    $v0, $0, 0xB\n') # syscall 11 prints the lower 8 bits of $a0 as an ascii character
+        asm_code_file.write('    syscall\n')
         storerv('0', quad.get_x())
     elif quad.get_op() == 'retv':
         loadvr(quad.get_x(), '1')
