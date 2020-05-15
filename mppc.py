@@ -597,6 +597,10 @@ def generate_asm_code_file(quad, name):
         asm_code_file.write('    li    $v0, 1\n')
         asm_code_file.write('    move  $a0, $t9\n')
         asm_code_file.write('    syscall\n')
+        # print new line after integer out
+        asm_code_file.write('    addi    $a0, $0, 0xA\n')
+        asm_code_file.write('    addi    $v0, $0, 0xB\n')
+        asm_code_file.write('    syscall\n')
     elif quad.get_op() == 'inp':
         asm_code_file.write('    li    $v0, 5\n')
         asm_code_file.write('    syscall\n')
