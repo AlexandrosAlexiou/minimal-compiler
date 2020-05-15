@@ -127,12 +127,17 @@ L_30:
     li    $v0, 5
     syscall
     move $t0, $v0
+    addi    $a0, $0, 0xA
+    addi    $v0, $0, 0xB
     sw    $t0, -12($s0)
 
 L_31:
-    lw    $t3, -12($s0)
+    lw    $t9, -12($s0)
     li    $v0, 1
-    move  $a0, $t3
+    move  $a0, $t9
+    syscall
+    addi    $a0, $0, 0xA
+    addi    $v0, $0, 0xB
     syscall
 
 L_32:
@@ -144,9 +149,12 @@ L_33:
     j    L_38
 
 L_34:
-    li    $t3, 10
+    li    $t9, 10
     li    $v0, 1
-    move  $a0, $t3
+    move  $a0, $t9
+    syscall
+    addi    $a0, $0, 0xA
+    addi    $v0, $0, 0xB
     syscall
 
 L_35:
