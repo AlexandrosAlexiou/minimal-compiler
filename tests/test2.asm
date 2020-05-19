@@ -148,11 +148,17 @@ L_28:
     li    $v0, 1
     move  $a0, $t9
     syscall
+    addi    $a0, $0, 0xA
+    addi    $v0, $0, 0xB
+    syscall
 
 L_29:
     li    $t9, 1000
     li    $v0, 1
     move  $a0, $t9
+    syscall
+    addi    $a0, $0, 0xA
+    addi    $v0, $0, 0xB
     syscall
 
 L_30:

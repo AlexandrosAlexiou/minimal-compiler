@@ -1,0 +1,17 @@
+program test7{
+    declare a,b,c,d,e;
+    procedure max(inout x, inout y)
+    {
+        if(x>y) then
+            x:= 50
+        else
+            x:= 51
+    }
+
+    {
+        a := 1;
+        b := 2;
+        call max(inout a, inout b);
+        print(a)
+    }
+}

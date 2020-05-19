@@ -1,0 +1,16 @@
+0: begin_block, max, _, _
+1: >, x, y, 3
+2: jump, _, _, 5
+3: :=, 50, _, x
+4: jump, _, _, 6
+5: :=, 51, _, x
+6: end_block, max, _, _
+7: begin_block, test7, _, _
+8: :=, 1, _, a
+9: :=, 2, _, b
+10: par, a, REF, _
+11: par, b, REF, _
+12: call, max, _, _
+13: out, a, _, _
+14: halt, _, _, _
+15: end_block, test7, _, _

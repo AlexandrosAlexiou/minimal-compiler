@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import os
-import string
 
 
 ##############################################################
@@ -530,7 +529,7 @@ def loadvr(v, r):
         elif entity_to_load.get_entityType() == 'Parameter' and entity_to_load.get_parMode() == 'inout' \
                 and entity_nesting_level < current_nesting_level:
             gnvlcode(v)
-            asm_code_file.write('    lw    $t0, 0(%t0)\n')
+            asm_code_file.write('    lw    $t0, 0($t0)\n')
             asm_code_file.write('    lw    $t%s, 0($t0)\n' % r)
         else:
             error('loadvr is not used correctly.')
@@ -556,7 +555,7 @@ def storerv(r, v):
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     elif entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level < current_nesting_level:
         gnvlcode(v)
-        asm_code_file.write('    lw    $t0, 0(%t0)\n')
+        asm_code_file.write('    lw    $t0, 0($t0)\n')
         asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     else:
         error('storerv is not used correctly.')
@@ -663,18 +662,16 @@ def generate_asm_code_file(quad, name):
             framelength = main_program_framelength
         to_call = search_entity(quad.get_x())
         to_call_nesting_level = get_entity_nesting_level(quad.get_x())
-        if actual_pars[-1].get_y() == 'RET':
-            actual_pars.pop()
+        if actual_pars:
+            if actual_pars[-1].get_y() == 'RET':
+                actual_pars.pop()
         if len(to_call.get_arguments_list()) != len(actual_pars):
             # print(len(to_call.get_arguments_list()), len(actual_pars))
             error('Subprogram \'%s\' parameter number is not matching definition' % to_call.get_name())
         for argument in to_call.get_arguments_list():
             quad = actual_pars.pop(0)
             if argument.get_parMode() != quad.get_y():
-                if quad.get_x() == 'CV':
-                    expected_mode = 'inout'
-                else:
-                    expected_mode = 'in'
+                expected_mode = 'inout' if quad.get_x() == 'CV' else 'in'
                 error('Subprogram: \'%s\'. Expected parameter \'%s\' mode to be \'%s\''
                       % (to_call.get_name(), quad.get_x(), expected_mode))
         if caller_nesting_level == to_call_nesting_level:
@@ -688,8 +685,10 @@ def generate_asm_code_file(quad, name):
     elif quad.get_op() == 'begin_block':
         asm_code_file.write('    sw    $ra, 0($sp)\n')
         if name == main_program_name:
+            # Reset file pointer at the start of the file to write the jump to main quad because now we know it.
             asm_code_file.seek(0)
             asm_code_file.write('    j    L_%d\n' % quad.get_label())
+            # Reset file pointer at the end of the file to resume normal assembly code generation
             asm_code_file.seek(0, 2)
             asm_code_file.write('    addi  $sp, $sp, %d\n' % main_program_framelength)
             asm_code_file.write('    move  $s0, $sp\n')
@@ -991,7 +990,7 @@ def add_function_entity(name):
     nesting_level = scopes[-1].get_enclosing_scope().get_nesting_level()
     if is_declared(name, "Function", nesting_level):
         error_line_message(token.get_tk_lineno(), token.get_tk_charno(),
-                           'Redefinition of \'%s\' inside the same scope.' % name)
+                           'Redefinition of \'%s\' inside the same scope. Minimal++ does not support function overloading.' % name)
     scopes[-2].add_Entity(Function(name))
 
 
@@ -1273,7 +1272,7 @@ def statement():
         global inside_function, has_return_stat
         if not inside_function or not inside_function[-1]:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),
-                               'Unexpected \'return\' statement outside of function body')
+                               'Encountered \'return\' statement outside of function body')
         else:
             has_return_stat[-1] = True
         token = lex()
