@@ -746,8 +746,8 @@ def lex():
         character = infile.read(1)
         charno += 1
         # File is allowed to have empty lines tabs and spaces at the start
-        while character is ' ' or character is "\n" or character is "\t":
-            if character is "\n":
+        while character == ' ' or character == "\n" or character == "\t":
+            if character == "\n":
                 lineno += 1
                 charno = 0
             character = infile.read(1)
@@ -782,39 +782,39 @@ def lex():
             infile.seek(infile.tell() - 1)
             charno -= 1
             return Token(TokenType.NUMBER_TK, buffer, lineno, charno)
-        elif character is '+':
+        elif character == '+':
             return Token(TokenType.PLUS_TK, buffer, lineno, charno)
-        elif character is '-':
+        elif character == '-':
             return Token(TokenType.MINUS_TK, buffer, lineno, charno)
-        elif character is '*':
+        elif character == '*':
             character = infile.read(1)
             charno += 1
-            if character is '/':
+            if character == '/':
                 error_line_message(lineno, charno, 'Expected "/*" to open comments before "*/" .')
             else:
                 infile.seek(infile.tell() - 1)
                 charno -= 1
                 return Token(TokenType.TIMES_TK, buffer, lineno, charno)
-        elif character is '/':
+        elif character == '/':
             character = infile.read(1)
             comments_charno = charno
             comments_line = lineno
             charno += 1
-            if character is '*':
+            if character == '*':
                 while (True):
                     character = infile.read(1)
                     if not character:
                         error_line_message(comments_line, comments_charno,
                                            'Comments opened. Expected  "*/"  but EOF reached.')
-                    if character is '*':
+                    if character == '*':
                         character = infile.read(1)
-                        if character is '/':
+                        if character == '/':
                             break
-                    elif character is '\n':
+                    elif character == '\n':
                         lineno += 1
                         charno = 0
-            elif character is '/':
-                while (character is not '\n'):
+            elif character == '/':
+                while (character != '\n'):
                     character = infile.read(1)
                 lineno += 1
                 charno = 0
@@ -822,52 +822,52 @@ def lex():
                 infile.seek(infile.tell() - 1)
                 charno -= 1
                 return Token(TokenType.SLASH_TK, buffer, lineno, charno)
-        elif character is '(':
+        elif character == '(':
             return Token(TokenType.LEFT_PARENTHESIS_TK, buffer, lineno, charno)
-        elif character is ')':
+        elif character == ')':
             return Token(TokenType.RIGHT_PARENTHESIS_TK, buffer, lineno, charno)
-        elif character is '[':
+        elif character == '[':
             return Token(TokenType.LEFT_BRACKET_TK, buffer, lineno, charno)
-        elif character is ']':
+        elif character == ']':
             return Token(TokenType.RIGHT_BRACKET_TK, buffer, lineno, charno)
-        elif character is '{':
+        elif character == '{':
             return Token(TokenType.LEFT_BRACE_TK, buffer, lineno, charno)
-        elif character is '}':
+        elif character == '}':
             return Token(TokenType.RIGHT_BRACE_TK, buffer, lineno, charno)
-        elif character is '<':
+        elif character == '<':
             character = infile.read(1)
-            if character is '=':
+            if character == '=':
                 buffer += character
                 return Token(TokenType.LESS_THAN_OR_EQUAL_TK, buffer, lineno, charno)
-            elif character is '>':
+            elif character == '>':
                 buffer += character
                 return Token(TokenType.NOT_EQUAL_TK, buffer, lineno, charno)
             else:
                 infile.seek(infile.tell() - 1)
                 return Token(TokenType.LESS_TK, buffer, lineno, charno)
-        elif character is '>':
+        elif character == '>':
             character = infile.read(1)
-            if character is '=':
+            if character == '=':
                 buffer += character
                 return Token(TokenType.GREATER_THAN_OR_EQUAL_TK, buffer, lineno, charno)
             else:
                 infile.seek(infile.tell() - 1)
                 return Token(TokenType.GREATER_TK, buffer, lineno, charno)
-        elif character is '=':
+        elif character == '=':
             return Token(TokenType.EQUAL_TK, buffer, lineno, charno)
-        elif character is ',':
+        elif character == ',':
             return Token(TokenType.COMMA_TK, buffer, lineno, charno)
-        elif character is ';':
+        elif character == ';':
             return Token(TokenType.SEMICOLON_TK, buffer, lineno, charno)
-        elif character is ':':
+        elif character == ':':
             character = infile.read(1)
-            if character is '=':
+            if character == '=':
                 buffer += character
                 return Token(TokenType.ASSIGN_TK, buffer, lineno, charno)
             else:
                 infile.seek(infile.tell() - 1)
                 return Token(TokenType.COLON_TK, buffer, lineno, charno)
-        elif character is '':
+        elif character == '':
             return Token(TokenType.EOF_TK, 'EOF', lineno, 0)
         else:
             error_line_message(lineno, charno, 'Invalid character.')
