@@ -361,6 +361,7 @@ main_program_framelength = -1
 subprogram_exists = False  # flag to check if the equivalent C file can be generated
 inside_function = list()  # If last element is true then we are currently inside a function
 has_return_stat = list()  # and if last element is true then we have return stat
+procedure_id_list = list() # holds all procedure id's to check for errors
 # Dictionary to store bound words and token values
 tokens = {
     '+': TokenType.PLUS_TK,
@@ -1143,6 +1144,9 @@ def subprograms():
     global token, subprogram_exists, inside_function, has_return_stat
     while token.get_tk_type() is TokenType.FUNCTION_TK or token.get_tk_type() is TokenType.PROCEDURE_TK:
         subprogram_exists = True
+        is_procedure = False
+        if token.get_tk_type() is TokenType.PROCEDURE_TK:
+            is_procedure = True
         if token.get_tk_type() is TokenType.FUNCTION_TK:
             inside_function.append(True)
         else:
@@ -1151,6 +1155,8 @@ def subprograms():
         token = lex()
         add_new_scope()
         if token.get_tk_type() is TokenType.ID_TK:
+            if is_procedure:
+                procedure_id_list.append(token.get_tk_value())
             name = token.get_tk_value()
             token = lex()
             add_function_entity(name)
@@ -1453,6 +1459,9 @@ def call_stat():
     global token
     if token.get_tk_type() is TokenType.ID_TK:
         procedure_id = token.get_tk_value()
+        if procedure_id not in procedure_id_list:
+            error_line_message(token.get_tk_lineno(), token.get_tk_charno(),
+                               'Calling undefined procedure \'%s\'.' % procedure_id)
         if search_entity(procedure_id) is None:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(),
                                'Undefined procedure \'%s\'.' % procedure_id)
@@ -1623,12 +1632,17 @@ def factor():
         token = lex()
     elif token.get_tk_type() is TokenType.ID_TK:
         ret = token.get_tk_value()
+        ret_charno = token.get_tk_charno()
+        ret_lineno = token.get_tk_lineno()
         entity = search_entity(ret)
         if entity is None:
             error_line_message(token.get_tk_lineno(), token.get_tk_charno(), 'Undefined id \'%s\'.' % ret)
         token = lex()
         tail = idtail()
         if tail is not None:
+            if ret in procedure_id_list:
+                error_line_message(ret_lineno, ret_charno, 
+                    'Calling procedure \'%s\' with assignment. Procedures do not have \'return\' statement.' % ret)
             function_return = newtemp()
             genquad('par', function_return, 'RET')
             genquad('call', ret)
