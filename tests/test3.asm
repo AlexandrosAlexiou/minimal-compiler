@@ -1,5 +1,4 @@
-    j    L_6
-       
+    j    Lmain
 L_0:
     sw    $ra, 0($sp)
 
@@ -28,8 +27,7 @@ L_5:
     lw    $ra, 0($sp)
     jr    $ra
 
-L_6:
-    sw    $ra, 0($sp)
+Lmain:    sw    $ra, 0($sp)
     addi  $sp, $sp, 28
     move  $s0, $sp
 

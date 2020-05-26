@@ -1,5 +1,4 @@
-    j    L_7
-       
+    j    Lmain
 L_0:
     sw    $ra, 0($sp)
 
@@ -30,8 +29,7 @@ L_6:
     lw    $ra, 0($sp)
     jr    $ra
 
-L_7:
-    sw    $ra, 0($sp)
+Lmain:    sw    $ra, 0($sp)
     addi  $sp, $sp, 32
     move  $s0, $sp
 

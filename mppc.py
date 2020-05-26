@@ -362,6 +362,7 @@ subprogram_exists = False  # flag to check if the equivalent C file can be gener
 inside_function = list()  # If last element is true then we are currently inside a function
 has_return_stat = list()  # and if last element is true then we have return stat
 procedure_id_list = list() # holds all procedure id's to check for errors
+enteredMain = False
 # Dictionary to store bound words and token values
 tokens = {
     '+': TokenType.PLUS_TK,
@@ -564,14 +565,20 @@ def storerv(r, v):
 
 # Generate a file containing the final code in assembly targeting the MIPS32 architecture
 def generate_asm_code_file(quad, name):
+    global enteredMain
     if str(quad.get_label()) == '0':
         # make a blank line to add the jump to main label later
-        asm_code_file.write(' ' * 20)
+         asm_code_file.write('    j    Lmain')
     relational_operators = ['=', '<>', '<', '<=', '>', '>=']
     asm_relational_operators_instructions = ['beq', 'bne', 'blt', 'ble', 'bgt', 'bge']
     arithmetic_operators = ['+', '-', '/', '*']
     asm_arithmetic_operators_instructions = ['add', 'sub', 'div', 'mul']
-    asm_code_file.write('\nL_' + str(quad.get_label()) + ':\n')
+    if name == main_program_name and enteredMain == False:
+        # Write Lmain once and mark the start of the main block
+        asm_code_file.write('\nLmain:')
+        enteredMain = True
+    else:
+        asm_code_file.write('\nL_' + str(quad.get_label()) + ':\n')
     if quad.get_op() == 'jump':
         asm_code_file.write('    j    L_%d\n' % quad.get_z())
     elif quad.get_op() in relational_operators:
@@ -668,7 +675,7 @@ def generate_asm_code_file(quad, name):
                 actual_pars.pop()
         if len(to_call.get_arguments_list()) != len(actual_pars):
             # print(len(to_call.get_arguments_list()), len(actual_pars))
-            error('Subprogram \'%s\' parameter number is not matching definition' % to_call.get_name())
+            error('Subprogram \'%s\' parameters number is not matching definition' % to_call.get_name())
         for argument in to_call.get_arguments_list():
             quad = actual_pars.pop(0)
             if argument.get_parMode() != quad.get_y():
@@ -686,11 +693,6 @@ def generate_asm_code_file(quad, name):
     elif quad.get_op() == 'begin_block':
         asm_code_file.write('    sw    $ra, 0($sp)\n')
         if name == main_program_name:
-            # Reset file pointer at the start of the file to write the jump to main quad because now we know it.
-            asm_code_file.seek(0)
-            asm_code_file.write('    j    L_%d\n' % quad.get_label())
-            # Reset file pointer at the end of the file to resume normal assembly code generation
-            asm_code_file.seek(0, 2)
             asm_code_file.write('    addi  $sp, $sp, %d\n' % main_program_framelength)
             asm_code_file.write('    move  $s0, $sp\n')
     elif quad.get_op() == 'end_block':
