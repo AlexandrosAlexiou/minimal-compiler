@@ -567,13 +567,12 @@ def storerv(r, v):
 def generate_asm_code_file(quad, name):
     global enteredMain
     if str(quad.get_label()) == '0':
-        # make a blank line to add the jump to main label later
-         asm_code_file.write('    j    Lmain')
+         asm_code_file.write('    j    Lmain\n')
     relational_operators = ['=', '<>', '<', '<=', '>', '>=']
     asm_relational_operators_instructions = ['beq', 'bne', 'blt', 'ble', 'bgt', 'bge']
     arithmetic_operators = ['+', '-', '/', '*']
     asm_arithmetic_operators_instructions = ['add', 'sub', 'div', 'mul']
-    if name == main_program_name and enteredMain == False:
+    if name == main_program_name and not enteredMain:
         # Write Lmain once and mark the start of the main block
         asm_code_file.write('\nLmain:')
         enteredMain = True
