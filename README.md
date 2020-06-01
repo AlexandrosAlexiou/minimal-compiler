@@ -9,4 +9,4 @@
 Python(v3.7.4) 
 
 ## Execution
-Run: `./mppc.py`
+Run: `./mppc.py [infile]`

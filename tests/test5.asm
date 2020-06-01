@@ -1,4 +1,5 @@
     j    Lmain
+
 L_0:
     sw    $ra, 0($sp)
 
