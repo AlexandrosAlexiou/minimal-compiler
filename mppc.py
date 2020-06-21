@@ -1,339 +1,10 @@
 #!/usr/bin/env python3
-import sys
 import os
-
-
-##############################################################
-#                                                            #
-#                     Class definitions                      #
-#                                                            #
-##############################################################
-
-# For Error, warning and scopes printing
-class ShellColors:
-    def __init__(self):
-        pass
-
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    WARNING = "\033[35m"
-    END = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINED = "\033[4m"
-    YELLOW = "\033[93m"
-    LIGHT_GRAY = "\033[90m"
-
-
-# Token ids
-class TokenType:
-    def __init__(self):
-        pass
-
-    ID_TK = 0
-    NUMBER_TK = 1
-    # Arithmetic Operators
-    PLUS_TK = 2
-    MINUS_TK = 3
-    TIMES_TK = 4
-    SLASH_TK = 5
-    # Punctuation marks
-    COMMA_TK = 8
-    COLON_TK = 9
-    SEMICOLON_TK = 10
-    # Relational operators
-    EQUAL_TK = 11
-    LESS_TK = 12
-    GREATER_TK = 13
-    NOT_EQUAL_TK = 14
-    GREATER_THAN_OR_EQUAL_TK = 15
-    LESS_THAN_OR_EQUAL_TK = 16
-    # Value Assignment
-    ASSIGN_TK = 17
-    # Brackets
-    LEFT_PARENTHESIS_TK = 18
-    RIGHT_PARENTHESIS_TK = 19
-    LEFT_BRACKET_TK = 20
-    RIGHT_BRACKET_TK = 21
-    LEFT_BRACE_TK = 22
-    RIGHT_BRACE_TK = 23
-    # Comments
-    ONE_LINE_TK = 24
-    OPEN_COMMENT_TK = 25
-    CLOSE_COMMENT_TK = 26
-    # Bound Words
-    PROGRAM_TK = 27
-    DECLARE_TK = 28
-    IF_TK = 29
-    ELSE_TK = 30
-    WHILE_TK = 31
-    DOUBLEWHILE_TK = 32
-    LOOP_TK = 33
-    EXIT_TK = 34
-    FORCASE_TK = 35
-    INCASE_TK = 36
-    WHEN_TK = 37
-    DEFAULT_TK = 38
-    NOT_TK = 39
-    AND_TK = 40
-    OR_TK = 41
-    FUNCTION_TK = 42
-    PROCEDURE_TK = 43
-    CALL_TK = 44
-    RETURN_TK = 45
-    IN_TK = 46
-    INOUT_TK = 47
-    INPUT_TK = 48
-    PRINT_TK = 49
-    THEN_TK = 50
-    # End Of File
-    EOF_TK = 51
-
-
-# Lexical analyzer return values to the syntax analyzer
-class Token:
-    def __init__(self, tk_type=None, tk_value=None, tk_lineno=None, tk_charno=None):
-        self.__tk_type = tk_type  # token type
-        self.__tk_value = tk_value  # token string value
-        self.__tk_lineno = tk_lineno  # token line number
-        self.__tk_charno = tk_charno  # token character number from the start of the line
-
-    def get_tk_type(self):
-        return self.__tk_type
-
-    def set_tk_type(self, tk_type):
-        self.__tk_type = tk_type
-
-    def get_tk_value(self):
-        return self.__tk_value
-
-    def set_tk_value(self, tk_value):
-        self.__tk_value = tk_value
-
-    def get_tk_lineno(self):
-        return self.__tk_lineno
-
-    def set_tk_lineno(self, tk_lineno):
-        self.__tk_lineno = tk_lineno
-
-    def get_tk_charno(self):
-        return self.__tk_charno
-
-    def set_tk_charno(self, tk_charno):
-        self.__tk_charno = tk_charno
-
-    # Tostring for debugging purposes
-    def __str__(self):
-        return '(' + str(self.__tk_type) + ',' + str(self.__tk_value) + ')'
-
-
-class Quad:
-    # eg. 100: -,a,b,c => c := a - b
-    def __init__(self, label, op, x, y, z):
-        self.__label = label  # eg. 100,101
-        self.__op = op  # +,-,*,/
-        self.__x = x  # variable name or constant
-        self.__y = y  # variable name or constant
-        self.__z = z  # variable name
-
-    def get_label(self):
-        return self.__label
-
-    def set_label(self, label):
-        self.__label = label
-
-    def get_op(self):
-        return self.__op
-
-    def set_op(self, op):
-        self.__op = op
-
-    def get_x(self):
-        return self.__x
-
-    def set_x(self, x):
-        self.__x = x
-
-    def get_y(self):
-        return self.__y
-
-    def set_y(self, y):
-        self.__y = y
-
-    def get_z(self):
-        return self.__z
-
-    def set_z(self, z):
-        self.__z = z
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return '(' + str(self.__label) + ': ' + str(self.__op) + ', ' + str(self.__x) + ', ' + str(
-            self.__y) + ', ' + str(self.__z) + ')'
-
-    # tostring for intermediate code file generation
-    def quad_to_file(self):
-        return str(self.__label) + ': ' + str(self.__op) + ', ' + str(self.__x) + ', ' + str(self.__y) + ', ' + str(
-            self.__z) + '\n'
-
-
-class Scope:
-    def __init__(self, nestinglevel=0, enclosing_scope=None):
-        self.__entities_list = list()
-        self.__nesting_level = nestinglevel
-        self.__current_offset = 12
-        self.__enclosing_scope = enclosing_scope
-
-    def get_entities_list(self):
-        return self.__entities_list
-
-    def add_Entity(self, Entity):
-        self.__entities_list.append(Entity)
-
-    def get_nesting_level(self):
-        return self.__nesting_level
-
-    def get_current_offset(self):
-        return self.__current_offset
-
-    def get_current_offset_and_advance(self):
-        current = self.__current_offset
-        self.__current_offset += 4  # this is the next offset
-        return current
-
-    def get_enclosing_scope(self):
-        return self.__enclosing_scope
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return '( ' + ShellColors.RED + 'Nesting Level: ' + ShellColors.END + str(
-            self.__nesting_level) + ': Enclosing Scope: ' + self.__enclosing_scope.__str__() + ' )'
-
-
-class Argument:
-    def __init__(self, parMode, nextArgument=None):
-        self.__parMode = parMode
-        self.__nextArgument = nextArgument
-
-    def get_parMode(self):
-        return self.__parMode
-
-    def set_parMode(self, parMode):
-        self.__parMode = parMode
-
-    def get_nextArgument(self):
-        return self.__nextArgument
-
-    def set_nextArgument(self, nextArgument):
-        self.__nextArgument = nextArgument
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return '( ' + ShellColors.LIGHT_GRAY + 'Argument Parmode: ' + ShellColors.END + self.__parMode + '-->' \
-               + ShellColors.LIGHT_GRAY + 'NextArgument: ' + ShellColors.END + self.__nextArgument.__str__() + ' )'
-
-
-class Entity:
-    # Entity type can be Variable or Function or Parameter or TemporaryVariable 
-    def __init__(self, name, entityType):
-        self.__name = name
-        self.__entityType = entityType
-
-    def get_name(self):
-        return self.__name
-
-    def get_entityType(self):
-        return self.__entityType
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return '( ' + ShellColors.YELLOW + ' Entity name: ' \
-               + ShellColors.END + self.__name + ',  EntityType: ' + self.__entityType + ' )'
-
-
-class Variable(Entity):
-    def __init__(self, name, offset):
-        super().__init__(name, 'Variable')
-        self.__offset = offset
-
-    def get_offset(self):
-        return self.__offset
-
-    def set_offset(self, offset):
-        self.__offset = offset
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return super().__str__() + '    ( ' + 'Variable offset: ' + str(self.__offset) + ' )'
-
-
-class Function(Entity):
-    def __init__(self, name, startQuad=-1):
-        super().__init__(name, 'Function')
-        self.__startQuad = startQuad
-        self.__arguments_list = list()
-        self.__framelength = -1
-
-    def get_startQuad(self):
-        return self.__startQuad
-
-    def set_start_quad(self, start_quad):
-        self.__startQuad = start_quad
-
-    def get_arguments_list(self):
-        return self.__arguments_list
-
-    def add_argument_in_list(self, argument):
-        self.__arguments_list.append(argument)
-
-    def get_framelength(self):
-        return self.__framelength
-
-    def set_framelength(self, framelength):
-        self.__framelength = framelength
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return super().__str__() + '    ( startQuad: ' + str(self.__startQuad) + ', framelen: ' + str(
-            self.__framelength) + ' )'
-
-
-class Parameter(Entity):
-    def __init__(self, name, parMode, offset=-1):
-        super().__init__(name, 'Parameter')
-        self.__parMode = parMode
-        self.__offset = offset
-
-    def get_parMode(self):
-        return self.__parMode
-
-    def set_parMode(self, parMode):
-        self.__parMode = parMode
-
-    def get_offset(self):
-        return self.__offset
-
-    def set_offset(self, offset):
-        self.__offset = offset
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return super().__str__() + '    ( Parameter mode: ' + self.__parMode + ', offset: ' + str(self.__offset) + ' )'
-
-
-class TemporaryVariable(Entity):
-    def __init__(self, name, offset=-1):
-        super().__init__(name, 'Tempvar')
-        self.__offset = offset
-
-    def get_offset(self):
-        return self.__offset
-
-    def set_offset(self, offset):
-        self.__offset = offset
-
-    # tostring for debugging purposes
-    def __str__(self):
-        return super().__str__() + '    ( Temporary Variable offset: ' + str(self.__offset) + ' )'
+import sys
+from symbol_table import *
+from quad import Quad
+from token import *
+from structures import tokens
 
 
 ##############################################################
@@ -363,56 +34,41 @@ inside_function = list()  # If last element is true then we are currently inside
 has_return_stat = list()  # and if last element is true then we have return stat
 procedure_id_list = list() # holds all procedure id's to check for errors
 enteredMain = False
-# Dictionary to store bound words and token values
-tokens = {
-    '+': TokenType.PLUS_TK,
-    '-': TokenType.MINUS_TK,
-    '*': TokenType.TIMES_TK,
-    '/': TokenType.SLASH_TK,
-    ',': TokenType.COMMA_TK,
-    ':': TokenType.COLON_TK,
-    ';': TokenType.SEMICOLON_TK,
-    '<': TokenType.LESS_TK,
-    '>': TokenType.GREATER_TK,
-    '<=': TokenType.LESS_THAN_OR_EQUAL_TK,
-    '>=': TokenType.GREATER_THAN_OR_EQUAL_TK,
-    '=': TokenType.EQUAL_TK,
-    '<>': TokenType.NOT_EQUAL_TK,
-    ':=': TokenType.ASSIGN_TK,
-    '(': TokenType.LEFT_PARENTHESIS_TK,
-    ')': TokenType.RIGHT_PARENTHESIS_TK,
-    '[': TokenType.LEFT_BRACKET_TK,
-    ']': TokenType.RIGHT_BRACKET_TK,
-    '{': TokenType.LEFT_BRACE_TK,
-    '}': TokenType.RIGHT_BRACE_TK,
-    '//': TokenType.ONE_LINE_TK,
-    '/*': TokenType.OPEN_COMMENT_TK,
-    '*/': TokenType.CLOSE_COMMENT_TK,
-    'program': TokenType.PROGRAM_TK,
-    'declare': TokenType.DECLARE_TK,
-    'if': TokenType.IF_TK,
-    'else': TokenType.ELSE_TK,
-    'while': TokenType.WHILE_TK,
-    'doublewhile': TokenType.DOUBLEWHILE_TK,
-    'loop': TokenType.LOOP_TK,
-    'exit': TokenType.EXIT_TK,
-    'forcase': TokenType.FORCASE_TK,
-    'incase': TokenType.INCASE_TK,
-    'when': TokenType.WHEN_TK,
-    'default': TokenType.DEFAULT_TK,
-    'not': TokenType.NOT_TK,
-    'and': TokenType.AND_TK,
-    'or': TokenType.OR_TK,
-    'function': TokenType.FUNCTION_TK,
-    'procedure': TokenType.PROCEDURE_TK,
-    'call': TokenType.CALL_TK,
-    'return': TokenType.RETURN_TK,
-    'in': TokenType.IN_TK,
-    'inout': TokenType.INOUT_TK,
-    'input': TokenType.INPUT_TK,
-    'print': TokenType.PRINT_TK,
-    'then': TokenType.THEN_TK
-}
+
+
+##############################################################
+#                                                            #
+#                   Error printing                           #
+#                                                            #
+##############################################################
+def error_line_message(lineno, charno, *args):
+    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']',
+          ShellColors.BOLD + '%s:%d:%d:' % (infile.name, lineno, charno) + ShellColors.END, *args)
+    # character pointer reset
+    infile.seek(0)
+    for i, line in enumerate(infile):
+        if i == lineno - 1:
+            print(line.replace('\t', ' ').replace('\n', ' '))  # \t and \n count as 1 character
+            print(ShellColors.GREEN + ' ' * (charno - 2) + '^' + ShellColors.END)
+    close_files()
+    sys.exit(1)
+
+
+def error_file_not_found(infile):
+    print(
+        '[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']' + ' File:' + ShellColors.GREEN + ' ' + infile + ' ' + ShellColors.END + 'does not exist.')
+    sys.exit(1)
+
+
+def error(*args):
+    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
+    sys.exit(1)
+
+
+def warning(*args):
+    print(ShellColors.WARNING + '[' + 'Warning' + ']' + ShellColors.END,
+          ShellColors.UNDERLINED + infile.name + ShellColors.END + ': ' + str(*args))
+    print('\n')
 
 
 ##############################################################
@@ -420,7 +76,6 @@ tokens = {
 #                        I/O files                           #
 #                                                            #
 ##############################################################
-# Open files.
 def open_files(input_filename, intermediate_code_filepath, c_equivalent_filepath, asm_code_filepath):
     global infile, int_file, c_code_file, asm_code_file
     infile = open(input_filename, 'r', encoding='utf-8')
@@ -429,20 +84,17 @@ def open_files(input_filename, intermediate_code_filepath, c_equivalent_filepath
     asm_code_file = open(asm_code_filepath, 'w', encoding='utf8')
 
 
-# Close files.
 def close_files():
     infile.close()
     int_file.close()
     c_code_file.close()
 
 
-# Generate a file containing the intermediate code
 def generate_intermediate_code_file():
     for quad in quads_list:
         int_file.write(quad.quad_to_file())
 
 
-# Generate a file containing the intermediate code equivalent to C
 def generate_c_code_file():
     c_code_file.write('#include <stdio.h>\n\n')
     for quad in quads_list:
@@ -701,41 +353,6 @@ def generate_asm_code_file(quad, name):
         else:
             asm_code_file.write('    lw    $ra, 0($sp)\n')
             asm_code_file.write('    jr    $ra\n')
-
-
-##############################################################
-#                                                            #
-#                   Error printing                           #
-#                                                            #
-##############################################################
-def error_line_message(lineno, charno, *args):
-    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']',
-          ShellColors.BOLD + '%s:%d:%d:' % (infile.name, lineno, charno) + ShellColors.END, *args)
-    # character pointer reset
-    infile.seek(0)
-    for i, line in enumerate(infile):
-        if i == lineno - 1:
-            print(line.replace('\t', ' ').replace('\n', ' '))  # \t and \n count as 1 character
-            print(ShellColors.GREEN + ' ' * (charno - 2) + '^' + ShellColors.END)
-    close_files()
-    sys.exit(1)
-
-
-def error_file_not_found(infile):
-    print(
-        '[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']' + ' File:' + ShellColors.GREEN + ' ' + infile + ' ' + ShellColors.END + 'does not exist.')
-    sys.exit(1)
-
-
-def error(*args):
-    print('[' + ShellColors.RED + 'ERROR' + ShellColors.END + ']', *args)
-    sys.exit(1)
-
-
-def warning(*args):
-    print(ShellColors.WARNING + '[' + 'Warning' + ']' + ShellColors.END,
-          ShellColors.UNDERLINED + infile.name + ShellColors.END + ': ' + str(*args))
-    print('\n')
 
 
 ##############################################################
