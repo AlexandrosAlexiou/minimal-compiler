@@ -4,17 +4,15 @@ program test6
 	function P1(in X,inout Y)
 	{
 	    declare;
-	    {
-	        print(Y);
-            Y:=Y-1;
+        if (X=1) then {
+            return(X)
+        }
 
-            if (X=1) then return(X)
-
-            else {
-                X := X-1;
-                return(P1(in X,inout Y))
-            }
-		}
+        else {
+            X := X-1;
+            print(X);
+            return(P1(in X,inout Y))
+        }
 	}
 
 	{

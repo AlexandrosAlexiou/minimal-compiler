@@ -6,7 +6,6 @@ from quad import Quad
 from token import *
 from structures import tokens
 
-
 ##############################################################
 #                                                            #
 #                     Global variables                       #
@@ -32,7 +31,7 @@ main_program_framelength = -1
 subprogram_exists = False  # flag to check if the equivalent C file can be generated
 inside_function = list()  # If last element is true then we are currently inside a function
 has_return_stat = list()  # and if last element is true then we have return stat
-procedure_id_list = list() # holds all procedure id's to check for errors
+procedure_id_list = list()  # holds all procedure id's to check for errors
 enteredMain = False
 
 
@@ -90,6 +89,11 @@ def close_files():
     c_code_file.close()
 
 
+##############################################################
+#                                                            #
+#                    Intermediate Code                       #
+#                                                            #
+##############################################################
 def generate_intermediate_code_file():
     for quad in quads_list:
         int_file.write(quad.quad_to_file())
@@ -202,7 +206,7 @@ def storerv(r, v):
         asm_code_file.write('    sw    $t%s, -%d($sp)\n' % (r, entity_to_store.get_offset()))
     elif entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'inout' and entity_nesting_level == current_nesting_level:
         asm_code_file.write('    lw    $t0, -%d($sp)\n' % entity_to_store.get_offset())
-        asm_code_file.write('    sw    $t%s, 0($t0)\n' %r)
+        asm_code_file.write('    sw    $t%s, 0($t0)\n' % r)
     elif (entity_to_store.get_entityType() == 'Variable' and entity_nesting_level < current_nesting_level) or \
             (entity_to_store.get_entityType() == 'Parameter' and entity_to_store.get_parMode() == 'in' and entity_nesting_level < current_nesting_level):
         gnvlcode(v)
@@ -257,16 +261,18 @@ def generate_asm_code_file(quad, name):
         asm_code_file.write('    move  $a0, $t9\n')
         asm_code_file.write('    syscall\n')
         # print new line after integer out
-        asm_code_file.write('    addi    $a0, $0, 0xA\n') # ascii code for LF
-        asm_code_file.write('    addi    $v0, $0, 0xB\n') # syscall 11 prints the lower 8 bits of $a0 as an ascii character
+        asm_code_file.write('    addi    $a0, $0, 0xA\n')  # ascii code for LF
+        asm_code_file.write(
+            '    addi    $v0, $0, 0xB\n')  # syscall 11 prints the lower 8 bits of $a0 as an ascii character
         asm_code_file.write('    syscall\n')
     elif quad.get_op() == 'inp':
         asm_code_file.write('    li    $v0, 5\n')
         asm_code_file.write('    syscall\n')
         asm_code_file.write('    move $t0, $v0\n')
         # print new line after integer out
-        asm_code_file.write('    addi    $a0, $0, 0xA\n') # ascii code for LF
-        asm_code_file.write('    addi    $v0, $0, 0xB\n') # syscall 11 prints the lower 8 bits of $a0 as an ascii character
+        asm_code_file.write('    addi    $a0, $0, 0xA\n')  # ascii code for LF
+        asm_code_file.write(
+            '    addi    $v0, $0, 0xB\n')  # syscall 11 prints the lower 8 bits of $a0 as an ascii character
         asm_code_file.write('    syscall\n')
         storerv('0', quad.get_x())
     elif quad.get_op() == 'retv':
@@ -711,7 +717,7 @@ def program():
 ##############################################################
 def block(name):
     global scopes, main_program_name, halt_label
-    #print_scopes()
+    # print_scopes()
     declarations()
     subprograms()
     startQuad = update_function_startQuad(name)
@@ -1260,8 +1266,8 @@ def factor():
         tail = idtail()
         if tail is not None:
             if ret in procedure_id_list:
-                error_line_message(ret_lineno, ret_charno, 
-                    'Calling procedure \'%s\' with assignment. Procedures do not have \'return\' statement.' % ret)
+                error_line_message(ret_lineno, ret_charno,
+                                   'Calling procedure \'%s\' with assignment. Procedures do not have \'return\' statement.' % ret)
             function_return = newtemp()
             genquad('par', function_return, 'RET')
             genquad('call', ret)
