@@ -20,5 +20,4 @@ program test6
         b:=5;
         g:=P1(in c, inout b)
 	}
-
 }
