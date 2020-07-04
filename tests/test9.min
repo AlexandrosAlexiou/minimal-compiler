@@ -1,0 +1,28 @@
+program test9
+{
+    declare a,b,c,g;
+	function f(in a, inout k)
+	{
+		declare;
+		function f2(){
+		    declare;
+		   {
+                k:=a+1;
+                c:=4;
+                return k
+           }
+		}
+
+        {
+            g := f2();
+            return g
+        }
+
+	}
+
+	{
+		a := 100;
+		c := f(in a, inout b);
+        print(c)
+	}
+}

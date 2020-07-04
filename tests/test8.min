@@ -1,0 +1,28 @@
+program test5
+{
+    declare a,A,B;
+	procedure f1(in a, inout b)
+	{
+		declare;
+		function f2()
+        {
+            declare;
+
+            {
+                b:=a;
+                return b
+            }
+        }
+        B := f2()
+       //call f2()
+
+	}
+
+	{
+		a:=3;
+		A:=4;
+		call f1(in a, inout A);
+        print(a);
+        print(A)
+	}
+}

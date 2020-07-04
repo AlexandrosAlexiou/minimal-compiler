@@ -6,6 +6,7 @@ program test5
 		declare B;
 		function f2()
         {
+            declare v,b,n,m,c;
             {
                 B:=1;
                 return 1

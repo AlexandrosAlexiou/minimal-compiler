@@ -1,6 +1,6 @@
 program main
 { 
-    declare a, b, c;
+    declare a, c, b;
 	function f(in a, inout b)
 	{
 		declare;

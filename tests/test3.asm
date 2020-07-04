@@ -18,7 +18,7 @@ L_2:
 
 L_3:
     li    $t1, 4
-    sw    $t1, -20($s0)
+    sw    $t1, -16($s0)
 
 L_4:
     lw    $t0, -16($sp)
@@ -30,7 +30,8 @@ L_5:
     lw    $ra, 0($sp)
     jr    $ra
 
-Lmain:    sw    $ra, 0($sp)
+Lmain:
+    sw    $ra, 0($sp)
     addi  $sp, $sp, 28
     move  $s0, $sp
 
@@ -44,7 +45,7 @@ L_8:
     sw    $t0, -12($fp)
 
 L_9:
-    addi    $t0, $sp, -16
+    addi    $t0, $sp, -20
     sw    $t0, -16($fp)
 
 L_10:
@@ -60,10 +61,10 @@ L_11:
 
 L_12:
     lw    $t1, -24($sp)
-    sw    $t1, -20($s0)
+    sw    $t1, -16($s0)
 
 L_13:
-    lw    $t9, -20($s0)
+    lw    $t9, -16($s0)
     li    $v0, 1
     move  $a0, $t9
     syscall
@@ -72,7 +73,7 @@ L_13:
     syscall
 
 L_14:
-    lw    $t9, -16($s0)
+    lw    $t9, -20($s0)
     li    $v0, 1
     move  $a0, $t9
     syscall

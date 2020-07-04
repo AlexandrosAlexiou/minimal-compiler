@@ -47,7 +47,8 @@ L_9:
     lw    $ra, 0($sp)
     jr    $ra
 
-Lmain:    sw    $ra, 0($sp)
+Lmain:
+    sw    $ra, 0($sp)
     addi  $sp, $sp, 20
     move  $s0, $sp
 

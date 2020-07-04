@@ -231,7 +231,7 @@ def generate_asm_code_file(quad, name):
     asm_arithmetic_operators_instructions = ['add', 'sub', 'div', 'mul']
     if name == main_program_name and not enteredMain:
         # Write Lmain once and mark the start of the main block
-        asm_code_file.write('\nLmain:')
+        asm_code_file.write('\nLmain:\n')
         enteredMain = True
     else:
         asm_code_file.write('\nL_' + str(quad.get_label()) + ':\n')
