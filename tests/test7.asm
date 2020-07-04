@@ -33,7 +33,6 @@ L_6:
     jr    $ra
 
 Lmain:
-    sw    $ra, 0($sp)
     addi  $sp, $sp, 32
     move  $s0, $sp
 

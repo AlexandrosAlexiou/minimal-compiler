@@ -31,7 +31,6 @@ L_5:
     jr    $ra
 
 Lmain:
-    sw    $ra, 0($sp)
     addi  $sp, $sp, 28
     move  $s0, $sp
 

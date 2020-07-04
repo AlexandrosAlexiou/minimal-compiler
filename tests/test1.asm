@@ -3,7 +3,6 @@
     j    Lmain
 
 Lmain:
-    sw    $ra, 0($sp)
     addi  $sp, $sp, 36
     move  $s0, $sp
 

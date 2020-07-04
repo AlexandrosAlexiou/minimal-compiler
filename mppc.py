@@ -331,6 +331,8 @@ def generate_asm_code_file(quad, name):
         if actual_pars:
             if actual_pars[-1].get_y() == 'RET':
                 actual_pars.pop()
+        else:
+            asm_code_file.write('    addi    $fp, $sp, %d\n' % framelength)
         if len(to_call.get_arguments_list()) != len(actual_pars):
             # print(len(to_call.get_arguments_list()), len(actual_pars))
             error('Subprogram \'%s\' parameters number is not matching definition' % to_call.get_name())
@@ -349,7 +351,8 @@ def generate_asm_code_file(quad, name):
         asm_code_file.write('    jal     L_%d\n' % to_call.get_startQuad())
         asm_code_file.write('    addi    $sp, $sp, -%d\n' % framelength)
     elif quad.get_op() == 'begin_block':
-        asm_code_file.write('    sw    $ra, 0($sp)\n')
+        if name != main_program_name:
+            asm_code_file.write('    sw    $ra, 0($sp)\n')
         if name == main_program_name:
             asm_code_file.write('    addi  $sp, $sp, %d\n' % main_program_framelength)
             asm_code_file.write('    move  $s0, $sp\n')
