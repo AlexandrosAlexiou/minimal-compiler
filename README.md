@@ -4,7 +4,6 @@
 * Intermediate code equivalent in C is ready to compile using any C compiler.
 * Final code ready to assemble using MARS 4.5 [(MIPS Assembler and Runtime Simulator)](http://courses.missouristate.edu/KenVollmar/mars/)
 <br/>
-<br/>
 
 # File extensions
 ## `.min` Files
