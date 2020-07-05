@@ -1,3 +1,6 @@
+# This class is responsible to hold the data for every quad generated.
+
+
 class Quad:
     # eg. 100: -,a,b,c => c := a - b
     def __init__(self, label, op, x, y, z):

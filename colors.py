@@ -1,3 +1,6 @@
+# This class is responsible to hold every color code used to make things prettier.
+
+
 class ShellColors:
     def __init__(self):
         pass

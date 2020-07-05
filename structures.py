@@ -1,7 +1,8 @@
+# This file is responsible to construct bound words and tokens with their values( see token.py ).
+
 from token import TokenType
 
 
-# Dictionary to store bound words and token values
 tokens = {
     '+': TokenType.PLUS_TK,
     '-': TokenType.MINUS_TK,

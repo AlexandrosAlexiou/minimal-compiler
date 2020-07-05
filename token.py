@@ -1,3 +1,6 @@
+# This class is responsible to hold bound words, tokens and their values.
+
+
 class TokenType:
     def __init__(self):
         pass

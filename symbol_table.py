@@ -1,3 +1,5 @@
+# This file holds the classes needed to implement the Symbol Table functionality.
+
 from colors import ShellColors
 
 
