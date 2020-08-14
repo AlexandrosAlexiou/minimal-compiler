@@ -4,14 +4,21 @@ program test4
     {
         a := 50;
         b := 6;
-        c := 70;
+        c := 69;
 
         forcase
-            when ( c > 70) : c := c - 40
-            when ( a > 100) : b :=  2
-            when ( a > 200) : a :=  3
-            when ( a > 30) : a :=  a-5
-            default:    print(a)
+            when ( c < 70 and c > -300):
+            {
+                c := c - 10;
+                print(c)
+            }
+            when ( b > 4): b :=  b - 1
+            when ( a > 30): a :=  a - 5
+            default:    {
+                print(a);
+                print(b);
+                print(c)
+            }
     }
 }
 

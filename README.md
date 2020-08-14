@@ -6,17 +6,17 @@
 <br/>
 
 # File extensions
-## `.min` Files
-These are the actual Minimal++ programs.
+### `.min` Files
+Minimal++ programs.
 
-## `.int` Files
-These are the equivalent intermediate code files for every test program.
+### `.int` Files
+Intermediate code files.
 
-## `.c` Files 
-These are the equivalent ANSI C files for every test program that does not have a function or procedure declaration.
+### `.c` Files 
+Equivalent programs in ANSI C. ( Does not support minimal++ programs with declared functions )
 
-## `.asm` Files 
-These are the final code files for every test program in assembly [MIPS](https://en.wikipedia.org/wiki/MIPS_architecture).
+### `.asm` Files 
+Final code programs in assembly [MIPS](https://en.wikipedia.org/wiki/MIPS_architecture).
 <br/>
 <br/>
 
